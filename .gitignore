@@ -1,0 +1,5 @@
+*.[oad]
+/.cflags
+/clockperf
+/build.h
+/license.h

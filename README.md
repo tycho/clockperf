@@ -20,7 +20,11 @@ The **Cost(ns)** column is the time cost to read that clock in nanoseconds, as
 measured by the TSC (except when measuring the cost of reading the TSC itself,
 which is measured by looking at gettimeofday).
 
-**Resol** is the observable tick rate of the clock.
+**Resol** is the observable tick rate of the clock. Note that if the clock
+is so high resolution that we see a distinct value on every read, then the
+observable resolution would merely be a function of how fast we could read it.
+For this reason, a value of "----" indicates that the clock advances too
+quickly for the resolution to be estimated with any precision.
 
 **Mono** indicates whether the clock source is monotonic, with an additional
 restriction. Not only must the clock only move forward, it must never return

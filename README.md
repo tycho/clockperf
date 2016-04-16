@@ -48,7 +48,7 @@ measurement (e.g. profiling, benchmarks, etc).
 Example Runs
 ------------
 
-Linux 3.5.0 on x86_64 with
+Linux 4.5.0 on x86_64 with
 `/sys/devices/system/clocksource/clocksource0/current_clocksource` set to
 `tsc`:
 ```
@@ -88,7 +88,7 @@ ftime            27.86    0.03%   1000Hz    No   994     0     5     0
 time              5.36    0.05%      1Hz    No  1000     0     0     0
 ```
 
-Linux 3.5.0 on x86_64 with 
+Linux 4.5.0 on x86_64 with
 `/sys/devices/system/clocksource/clocksource0/current_clocksource` set to
 `hpet`:
 ```

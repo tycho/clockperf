@@ -1062,10 +1062,8 @@ int main(UNUSED int argc, UNUSED char **argv)
     init_cpu_clock();
     calibrate_cpu_clock();
 
-    printf("Invariant TSC: %s\n", have_invariant_tsc() ? "Yes" : "No");
+    printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
-
-    printf("\n");
 
     for (p = clock_pairs; p && p->secondary.major != CPERF_NONE; p++) {
         uint64_t res;

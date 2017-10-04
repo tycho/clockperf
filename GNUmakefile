@@ -86,6 +86,10 @@ ifneq ($(findstring CYGWIN,$(uname_S)),)
 LDFLAGS += -lwinmm
 endif
 
+ifneq ($(findstring -flto,$(CFLAGS)),)
+LDFLAGS += $(CFLAGS)
+endif
+
 ifeq (,$(findstring clean,$(MAKECMDGOALS)))
 ifeq (,$(findstring distclean,$(MAKECMDGOALS)))
 DEPS := $(shell ls $(OBJECTS:.o=.d) 2>/dev/null)

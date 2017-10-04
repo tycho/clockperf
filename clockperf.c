@@ -351,14 +351,20 @@ static uint32_t get_cycles_per_usec(void)
     uint64_t wc_s, wc_e;
     uint64_t c_s, c_e;
 
-    if (clock_read(tsc_ref_clock, &wc_s))
+    if (clock_read(tsc_ref_clock, &wc_s)) {
+        fprintf(stderr, "Reference clock '%s' died while measuring TSC frequency\n",
+                clock_name(tsc_ref_clock));
         abort();
+    }
     c_s = get_cpu_clock();
     do {
         uint64_t elapsed;
 
-        if (clock_read(tsc_ref_clock, &wc_e))
+        if (clock_read(tsc_ref_clock, &wc_e)) {
+            fprintf(stderr, "Reference clock '%s' died while measuring TSC frequency\n",
+                    clock_name(tsc_ref_clock));
             abort();
+        }
         elapsed = wc_e - wc_s;
         if (elapsed >= 1280000ULL) {
             c_e = get_cpu_clock();

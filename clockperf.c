@@ -42,11 +42,17 @@ struct clockspec {
     uint32_t major;
     uint32_t minor;
 };
+
+static struct clockspec tsc_ref_clock = { CPERF_NONE, 0 };
+static struct clockspec ref_clock = { CPERF_NONE, 0 };
+
 static inline int clock_read(struct clockspec spec, uint64_t *output);
+static const char *clock_name(struct clockspec spec);
+static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock);
 
 typedef struct _clock_pair_t {
     struct clockspec primary;
-    struct clockspec secondary;
+    struct clockspec *ref;
 } clock_pair_t;
 
 #if defined(TARGET_CPU_X86)
@@ -193,95 +199,165 @@ static uint32_t cycles_per_usec;
 #endif
 
 /*
+ * Choices for REF_CLOCK in order of preference, from best to worst.
+ */
+struct clockspec ref_clock_choices[] = {
+#ifdef HAVE_CPU_CLOCK
+    {CPERF_TSC, 0},
+#endif
+#ifdef HAVE_MACH_TIME
+    {CPERF_MACH_TIME, 0},
+#endif
+#ifdef HAVE_CLOCK_GETTIME
+#ifdef CLOCK_MONOTONIC_RAW
+    {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},
+#endif
+    {CPERF_GETTIME, CLOCK_REALTIME},
+#endif
+#ifdef HAVE_GETTIMEOFDAY
+    {CPERF_GTOD, 0},
+#endif
+    {CPERF_NONE, 0}
+};
+
+/*
  * We run tests in pairs of clocks, attempting to corroborate the first clock
  * with the results of the second clock. If there's too much mismatch between
  * the two, then a warning is printed.
  */
 clock_pair_t clock_pairs[] = {
     /* Characterizes overhead of measurement mechanism. */
-    //{ {CPERF_NONE, 0},                           REF_CLOCK },
+    //{ {CPERF_NONE, 0},                            &ref_clock},
 
 #ifdef HAVE_CPU_CLOCK
-    { {CPERF_TSC, 0},                            TSC_REF_CLOCK },
+    { {CPERF_TSC, 0},                            &tsc_ref_clock },
 #endif
 #ifdef HAVE_GETTIMEOFDAY
-    { {CPERF_GTOD, 0},                           REF_CLOCK },
+    { {CPERF_GTOD, 0},                           &ref_clock },
 #endif
 #ifdef HAVE_MACH_TIME
-    { {CPERF_MACH_TIME, 0},                      REF_CLOCK },
+    { {CPERF_MACH_TIME, 0},                      &ref_clock },
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-    { {CPERF_GETTIME, CLOCK_REALTIME},           REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_REALTIME},           &ref_clock },
 #ifdef CLOCK_REALTIME_COARSE
-    { {CPERF_GETTIME, CLOCK_REALTIME_COARSE},    REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_REALTIME_COARSE},    &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC
-    { {CPERF_GETTIME, CLOCK_MONOTONIC},          REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC},          &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC_COARSE
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},   REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},   &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},      REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},      &ref_clock },
 #endif
 #ifdef CLOCK_BOOTTIME
-    { {CPERF_GETTIME, CLOCK_BOOTTIME},           REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_BOOTTIME},           &ref_clock },
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID}, REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID}, &ref_clock },
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},  REF_CLOCK },
+    { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},  &ref_clock },
 #endif
 #endif
-    { {CPERF_CLOCK, 0},                          REF_CLOCK },
+    { {CPERF_CLOCK, 0},                          &ref_clock },
 #ifdef HAVE_GETRUSAGE
-    { {CPERF_RUSAGE, 0},                         REF_CLOCK },
+    { {CPERF_RUSAGE, 0},                         &ref_clock },
 #endif
 #ifdef HAVE_FTIME
-    { {CPERF_FTIME, 0},                          REF_CLOCK },
+    { {CPERF_FTIME, 0},                          &ref_clock },
 #endif
 #ifdef HAVE_TIME
-    { {CPERF_TIME, 0},                           REF_CLOCK },
+    { {CPERF_TIME, 0},                           &ref_clock },
 #endif
 #ifdef TARGET_OS_WINDOWS
-    { {CPERF_QUERYPERFCOUNTER, 0},               REF_CLOCK },
-    { {CPERF_GETTICKCOUNT, 0},                   REF_CLOCK },
-    { {CPERF_GETTICKCOUNT64, 0},                 REF_CLOCK },
-    { {CPERF_TIMEGETTIME, 0},                    REF_CLOCK },
-    { {CPERF_GETSYSTIME, 0},                     REF_CLOCK },
-    { {CPERF_UNBIASEDINTTIME, 0},                REF_CLOCK },
+    { {CPERF_QUERYPERFCOUNTER, 0},               &ref_clock },
+    { {CPERF_GETTICKCOUNT, 0},                   &ref_clock },
+    { {CPERF_GETTICKCOUNT64, 0},                 &ref_clock },
+    { {CPERF_TIMEGETTIME, 0},                    &ref_clock },
+    { {CPERF_GETSYSTIME, 0},                     &ref_clock },
+    { {CPERF_UNBIASEDINTTIME, 0},                &ref_clock },
 #endif
-    { {CPERF_NONE, 0},                          {CPERF_NONE, 0} }
+    { {CPERF_NONE, 0},                           NULL }
 };
+
+static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
+{
+    uint64_t ctr_last = 0, ctr_now = 0;
+    struct clockspec *spec = ref_clock_choices;
+#ifdef _DEBUG
+    fprintf(stderr, "trying to choose reference clock for %s\n", clock_name(for_clock));
+#endif
+    while (spec && spec->major != CPERF_NONE)
+    {
+        if (spec->major == for_clock.major) {
+            /* You can't use the same clock as a reference for itself. */
+            goto fail;
+        }
+#ifdef _DEBUG
+        fprintf(stderr, "trying %s\n", clock_name(*spec));
+#endif
+
+        if (clock_read(*spec, &ctr_last) || !ctr_last) {
+            /* This clock failed. Try the next one. */
+#ifdef _DEBUG
+            fprintf(stderr, "  failed initial read\n");
+#endif
+            goto fail;
+        }
+
+        /* Quick sanity check to ensure clock is advancing monotonically. */
+        for (int i = 0; i < 100; i++) {
+            if (clock_read(*spec, &ctr_now) || !ctr_now) {
+                /* Clock failed? If this didn't happen on the first attempt,
+                 * then it really shouldn't happen at all. But checking this
+                 * anyway.
+                 */
+#ifdef _DEBUG
+                fprintf(stderr, "  failed read %d\n", i + 1);
+#endif
+                goto fail;
+            }
+            if (ctr_now <= ctr_last) {
+                /* Not monotonic, try the next clock. */
+#ifdef _DEBUG
+                fprintf(stderr, "  not monotonic at read %d\n", i + 1);
+#endif
+                goto fail;
+            }
+            ctr_last = ctr_now;
+        }
+
+        /* This clock seems to be working and sane. */
+        *ref = *spec;
+#ifdef _DEBUG
+        fprintf(stderr, "chose %s as reference clock\n", clock_name(*ref));
+#endif
+        return 0;
+fail:
+        spec++;
+    }
+    fprintf(stderr, "Could not choose a reference clock for %s! Aborting.\n",
+            clock_name(for_clock));
+    abort();
+    return 1;
+}
 
 #ifdef HAVE_CPU_CLOCK
 static uint32_t get_cycles_per_usec(void)
 {
-    struct clockspec cs;
     uint64_t wc_s, wc_e;
     uint64_t c_s, c_e;
 
-#ifdef TARGET_COMPILER_MSVC
-    cs.major = CPERF_QUERYPERFCOUNTER;
-    cs.minor = 0;
-#else
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-    cs.major = CPERF_GETTIME;
-    cs.minor = CLOCK_MONOTONIC;
-#else
-    cs.major = CPERF_GTOD;
-    cs.minor = 0;
-#endif
-#endif
-
-    if (clock_read(cs, &wc_s))
+    if (clock_read(tsc_ref_clock, &wc_s))
         abort();
     c_s = get_cpu_clock();
     do {
         uint64_t elapsed;
 
-        if (clock_read(cs, &wc_e))
+        if (clock_read(tsc_ref_clock, &wc_e))
             abort();
         elapsed = wc_e - wc_s;
         if (elapsed >= 1280000ULL) {
@@ -299,6 +375,9 @@ static void calibrate_cpu_clock(void)
     double delta, mean, S;
     uint32_t avg, cycles[NR_TIME_ITERS];
     int i, samples;
+
+    struct clockspec for_clock = {CPERF_TSC, 0};
+    choose_ref_clock(&tsc_ref_clock, for_clock);
 
     cycles[0] = get_cycles_per_usec();
     S = delta = mean = 0.0;
@@ -879,6 +958,10 @@ static int clock_resolution(const struct clockspec spec, uint64_t *output)
 {
     uint64_t hz;
 
+    if (ref_clock.major == CPERF_NONE && spec.major != CPERF_TSC) {
+        choose_ref_clock(&ref_clock, spec);
+    }
+
     switch(spec.major) {
         case CPERF_NONE:
             return 1;
@@ -1067,7 +1150,7 @@ int main(UNUSED int argc, UNUSED char **argv)
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
 
-    for (p = clock_pairs; p && p->secondary.major != CPERF_NONE; p++) {
+    for (p = clock_pairs; p && p->ref; p++) {
         uint64_t res;
         char buf[16];
 
@@ -1081,8 +1164,8 @@ int main(UNUSED int argc, UNUSED char **argv)
     printf("\n");
 
     printf("Name          Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
-    for (p = clock_pairs; p && p->secondary.major != CPERF_NONE; p++) {
-        clock_compare(p->primary, p->secondary);
+    for (p = clock_pairs; p && p->ref; p++) {
+        clock_compare(p->primary, *p->ref);
     }
 
     return 0;

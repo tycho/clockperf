@@ -37,7 +37,7 @@ BINARY := $(PROJECT)$(EXT)
 all: $(BINARY)
 
 ifdef DEBUG
-OPTLEVEL := -O0 -ggdb3
+OPTLEVEL := -O0 -ggdb3 -D_DEBUG
 else
 OPTLEVEL := -O3
 endif

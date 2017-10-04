@@ -227,60 +227,60 @@ struct clockspec ref_clock_choices[] = {
  */
 clock_pair_t clock_pairs[] = {
     /* Characterizes overhead of measurement mechanism. */
-    //{ {CPERF_NONE, 0},                            &ref_clock},
+    //{ {CPERF_NONE, 0},                               &ref_clock},
 
 #ifdef HAVE_CPU_CLOCK
-    { {CPERF_TSC, 0},                            &tsc_ref_clock },
+    { {CPERF_TSC, 0},                                &tsc_ref_clock },
 #endif
 #ifdef HAVE_GETTIMEOFDAY
-    { {CPERF_GTOD, 0},                           &ref_clock },
+    { {CPERF_GTOD, 0},                               &ref_clock },
 #endif
 #ifdef HAVE_MACH_TIME
-    { {CPERF_MACH_TIME, 0},                      &ref_clock },
+    { {CPERF_MACH_TIME, 0},                          &ref_clock },
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-    { {CPERF_GETTIME, CLOCK_REALTIME},           &ref_clock },
+    { {CPERF_GETTIME, CLOCK_REALTIME},               &ref_clock },
 #ifdef CLOCK_REALTIME_COARSE
-    { {CPERF_GETTIME, CLOCK_REALTIME_COARSE},    &ref_clock },
+    { {CPERF_GETTIME, CLOCK_REALTIME_COARSE},        &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC
-    { {CPERF_GETTIME, CLOCK_MONOTONIC},          &ref_clock },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC},              &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC_COARSE
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},   &ref_clock },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},       &ref_clock },
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},      &ref_clock },
+    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},          &ref_clock },
 #endif
 #ifdef CLOCK_BOOTTIME
-    { {CPERF_GETTIME, CLOCK_BOOTTIME},           &ref_clock },
+    { {CPERF_GETTIME, CLOCK_BOOTTIME},               &ref_clock },
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID}, &ref_clock },
+    { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},     &ref_clock },
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},  &ref_clock },
+    { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},      &ref_clock },
 #endif
 #endif
-    { {CPERF_CLOCK, 0},                          &ref_clock },
+    { {CPERF_CLOCK, 0},                              &ref_clock },
 #ifdef HAVE_GETRUSAGE
-    { {CPERF_RUSAGE, 0},                         &ref_clock },
+    { {CPERF_RUSAGE, 0},                             &ref_clock },
 #endif
 #ifdef HAVE_FTIME
-    { {CPERF_FTIME, 0},                          &ref_clock },
+    { {CPERF_FTIME, 0},                              &ref_clock },
 #endif
 #ifdef HAVE_TIME
-    { {CPERF_TIME, 0},                           &ref_clock },
+    { {CPERF_TIME, 0},                               &ref_clock },
 #endif
 #ifdef TARGET_OS_WINDOWS
-    { {CPERF_QUERYPERFCOUNTER, 0},               &ref_clock },
-    { {CPERF_GETTICKCOUNT, 0},                   &ref_clock },
-    { {CPERF_GETTICKCOUNT64, 0},                 &ref_clock },
-    { {CPERF_TIMEGETTIME, 0},                    &ref_clock },
-    { {CPERF_GETSYSTIME, 0},                     &ref_clock },
-    { {CPERF_UNBIASEDINTTIME, 0},                &ref_clock },
+    { {CPERF_QUERYPERFCOUNTER, 0},                   &ref_clock },
+    { {CPERF_GETTICKCOUNT, 0},                       &ref_clock },
+    { {CPERF_GETTICKCOUNT64, 0},                     &ref_clock },
+    { {CPERF_TIMEGETTIME, 0},                        &ref_clock },
+    { {CPERF_GETSYSTIME, 0},                         &ref_clock },
+    { {CPERF_UNBIASEDINTTIME, 0},                    &ref_clock },
 #endif
-    { {CPERF_NONE, 0},                           NULL }
+    { {CPERF_NONE, 0},                               NULL }
 };
 
 static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
@@ -919,7 +919,7 @@ baseline:
     if (self.major == CPERF_NONE) {
         /* Assume best case overhead. */
         overhead = cost_other_mean - (cost_other_mean * (cost_other_error / 100.0));
-        printf("%-14s %7.2lf %7.2lf%%\n",
+        printf("%-20s %7.2lf %7.2lf%%\n",
             "(overhead)", cost_other_mean, cost_other_error);
         goto cleanup;
     }
@@ -932,7 +932,7 @@ baseline:
     else
         strcpy(strbuf[0], "----");
 
-    printf("%-14s %7.2lf %7.2lf%% %8s %5s %5d %5d %5d %5d\n",
+    printf("%-20s %7.2lf %7.2lf%% %8s %5s %5d %5d %5d %5d\n",
         clock_name(self), cost_other_mean, cost_other_error,
         strbuf[0],
         (!stalls && !backwards && !jumps && !failures) ? "Yes" : "No",
@@ -944,7 +944,7 @@ baseline:
         || cost_self_error > 10.0)
         && cost_self_mean >= __FLT_EPSILON__)
     {
-        printf("%-14s %7.2lf %7.2lf%%\n",
+        printf("%-20s %7.2lf %7.2lf%%\n",
             "", cost_self_mean, cost_self_error);
     }
 
@@ -1163,13 +1163,13 @@ int main(UNUSED int argc, UNUSED char **argv)
         if (clock_resolution(p->primary, &res) != 0)
             continue;
 
-        printf("%-16s resolution = %s\n",
+        printf("%-22s resolution = %s\n",
                 clock_name(p->primary),
                 pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
     }
     printf("\n");
 
-    printf("Name          Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
+    printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
     for (p = clock_pairs; p && p->ref; p++) {
         clock_compare(p->primary, *p->ref);
     }

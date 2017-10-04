@@ -252,8 +252,17 @@ clock_pair_t clock_pairs[] = {
 #ifdef CLOCK_MONOTONIC_RAW
     { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},          &ref_clock },
 #endif
+#ifdef CLOCK_MONOTONIC_RAW_APPROX // OS X
+    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW_APPROX},   &ref_clock },
+#endif
 #ifdef CLOCK_BOOTTIME
     { {CPERF_GETTIME, CLOCK_BOOTTIME},               &ref_clock },
+#endif
+#ifdef CLOCK_UPTIME_RAW // OS X
+    { {CPERF_GETTIME, CLOCK_UPTIME_RAW},             &ref_clock },
+#endif
+#ifdef CLOCK_UPTIME_RAW_APPROX // OS X
+    { {CPERF_GETTIME, CLOCK_UPTIME_RAW_APPROX},      &ref_clock },
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
     { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},     &ref_clock },
@@ -563,9 +572,21 @@ static const char *clock_name(struct clockspec spec)
         case CLOCK_MONOTONIC_RAW:
             return "monotonic_raw";
 #endif
+#ifdef CLOCK_MONOTONIC_RAW_APPROX // OS X
+        case CLOCK_MONOTONIC_RAW_APPROX:
+            return "monotonic_raw_approx";
+#endif
 #ifdef CLOCK_BOOTTIME
         case CLOCK_BOOTTIME:
             return "boottime";
+#endif
+#ifdef CLOCK_UPTIME_RAW // OS X
+        case CLOCK_UPTIME_RAW:
+            return "uptime_raw";
+#endif
+#ifdef CLOCK_UPTIME_RAW_APPROX // OS X
+        case CLOCK_UPTIME_RAW_APPROX:
+            return "uptime_raw_approx";
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
         case CLOCK_PROCESS_CPUTIME_ID:

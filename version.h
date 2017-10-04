@@ -1,7 +1,7 @@
 /*
  * clockperf
  *
- * Copyright (c) 2016, Steven Noonan <steven@uplinklabs.net>
+ * Copyright (c) 2016-2017, Steven Noonan <steven@uplinklabs.net>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -26,7 +26,7 @@ const char *clockperf_version_short(void);
 const char *clockperf_version_long(void);
 int clockperf_version_major(void);
 int clockperf_version_minor(void);
-int clockperf_version_revison(void);
+int clockperf_version_revision(void);
 int clockperf_version_build(void);
 
 #endif

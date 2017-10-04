@@ -468,7 +468,7 @@ static const char *clock_name(struct clockspec spec)
         case CLOCK_MONOTONIC:
             return "monotonic";
 #endif
-#ifdef CLOCK_MONOTONIC_RAW
+#ifdef CLOCK_MONOTONIC_COARSE
         case CLOCK_MONOTONIC_COARSE:
             return "monotonic_crs";
 #endif

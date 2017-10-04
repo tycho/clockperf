@@ -80,8 +80,10 @@
 #endif
 
 #ifdef TARGET_COMPILER_GCC
+#define INLINE __attribute__((always_inline)) inline
 #define UNUSED __attribute__((unused))
 #else
+#define INLINE inline
 #define UNUSED
 #endif
 

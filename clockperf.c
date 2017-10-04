@@ -61,7 +61,7 @@ static void init_cpu_clock(void)
 {
 }
 
-static inline uint64_t get_cpu_clock(void)
+static INLINE uint64_t get_cpu_clock(void)
 {
     uint32_t lo, hi;
 
@@ -82,7 +82,7 @@ static void init_cpu_clock(void)
 {
 }
 
-static inline uint64_t get_cpu_clock(void)
+static INLINE uint64_t get_cpu_clock(void)
 {
 #ifdef TARGET_COMPILER_MSVC
     return __rdtsc();
@@ -116,7 +116,7 @@ static inline uint64_t get_cpu_clock(void)
 
 static int supports_atb = 0;
 
-static inline uint64_t get_cpu_clock(void)
+static INLINE uint64_t get_cpu_clock(void)
 {
     uint64_t result = 0;
     uint32_t upper, lower, tmp;

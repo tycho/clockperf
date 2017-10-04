@@ -36,9 +36,17 @@ BINARY := $(PROJECT)$(EXT)
 
 all: $(BINARY)
 
+ifdef DEBUG
+OPTLEVEL := -O0 -ggdb3
+else
+OPTLEVEL := -O3
+endif
+
 CC := gcc
 CP := cp -L
-CFLAGS := -O3 -fno-strict-aliasing \
+CFLAGS := \
+	$(OPTLEVEL) \
+	-fno-strict-aliasing \
 	-std=gnu11 \
 	-Werror=implicit \
 	-Werror=undef \

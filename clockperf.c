@@ -44,6 +44,11 @@ struct clockspec {
 };
 static inline int clock_read(struct clockspec spec, uint64_t *output);
 
+typedef struct _clock_pair_t {
+    struct clockspec primary;
+    struct clockspec secondary;
+} clock_pair_t;
+
 #if defined(TARGET_CPU_X86)
 #define HAVE_CPU_CLOCK
 static void init_cpu_clock(void)
@@ -192,10 +197,7 @@ static uint32_t cycles_per_usec;
  * with the results of the second clock. If there's too much mismatch between
  * the two, then a warning is printed.
  */
-struct clock_pair_t {
-    struct clockspec primary;
-    struct clockspec secondary;
-} clock_pairs[] = {
+clock_pair_t clock_pairs[] = {
     /* Characterizes overhead of measurement mechanism. */
     //{ {CPERF_NONE, 0},                           REF_CLOCK },
 
@@ -1050,7 +1052,7 @@ static int have_invariant_tsc(void)
 
 int main(UNUSED int argc, UNUSED char **argv)
 {
-    struct clock_pair_t *p;
+    clock_pair_t *p;
 
 #ifdef TARGET_OS_WINDOWS
     timeBeginPeriod(1);

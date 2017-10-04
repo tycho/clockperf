@@ -69,6 +69,12 @@
 #endif
 #endif
 
+#ifdef __MACH__
+#ifdef CLOCK_REALTIME
+#define HAVE_CLOCK_GETTIME
+#endif
+#endif
+
 #ifdef TARGET_CPU_PPC
 #include <sys/wait.h>
 #endif

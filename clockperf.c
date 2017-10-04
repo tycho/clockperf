@@ -264,7 +264,7 @@ static uint32_t get_cycles_per_usec(void)
     cs.major = CPERF_QUERYPERFCOUNTER;
     cs.minor = 0;
 #else
-#ifdef CLOCK_MONOTONIC
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     cs.major = CPERF_GETTIME;
     cs.minor = CLOCK_MONOTONIC;
 #else

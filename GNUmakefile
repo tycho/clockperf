@@ -87,10 +87,12 @@ LDFLAGS += -lwinmm
 endif
 
 ifeq (,$(findstring clean,$(MAKECMDGOALS)))
+ifeq (,$(findstring distclean,$(MAKECMDGOALS)))
 DEPS := $(shell ls $(OBJECTS:.o=.d) 2>/dev/null)
 
 ifneq ($(DEPS),)
 -include $(DEPS)
+endif
 endif
 endif
 
@@ -103,6 +105,8 @@ depend: $(DEPS)
 
 $(BINARY): $(OBJECTS)
 	$(QUIET_LINK)$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
+
+distclean: clean
 
 clean:
 	$(QUIET)rm -f .cflags

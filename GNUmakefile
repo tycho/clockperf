@@ -65,7 +65,8 @@ LDFLAGS := -lm
 OBJECTS := clockperf.o version.o
 
 ifneq ($(CC),clang)
-CFLAGS += -fno-PIC
+CFLAGS += -fPIC
+LDFLAGS += -fPIC
 endif
 
 ifeq ($(uname_S),Linux)

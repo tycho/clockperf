@@ -302,10 +302,10 @@ static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
 #endif
                 goto fail;
             }
-            if (ctr_now <= ctr_last) {
+            if (ctr_now < ctr_last) {
                 /* Not monotonic, try the next clock. */
 #ifdef _DEBUG
-                fprintf(stderr, "  not monotonic at read %d\n", i + 1);
+                fprintf(stderr, "  not monotonic at read %d (%" PRIu64 " < %" PRIu64 ")\n", i + 1, ctr_now, ctr_last);
 #endif
                 goto fail;
             }

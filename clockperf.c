@@ -172,6 +172,9 @@ struct clockspec ref_clock_choices[] = {
 #ifdef HAVE_CPU_CLOCK
     {CPERF_TSC, 0},
 #endif
+#ifdef TARGET_OS_WINDOWS
+    {CPERF_QUERYPERFCOUNTER, 0},
+#endif
 #ifdef HAVE_MACH_TIME
     {CPERF_MACH_TIME, 0},
 #endif

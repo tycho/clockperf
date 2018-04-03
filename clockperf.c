@@ -166,40 +166,7 @@ static uint32_t cycles_per_usec;
 #endif
 
 /*
- * Reference clock, used as sanity check for a clock's reported cost and time
- * elapsed. Chosen in this order, based on availability:
- *
- *   - TSC
- *   - clock_gettime with CLOCK_MONOTONIC
- *   - clock_gettime with CLOCK_REALTIME
- *   - gettimeofday
- */
-#ifdef HAVE_CPU_CLOCK
-#define REF_CLOCK {CPERF_TSC, 0}
-#else
-#ifdef HAVE_CLOCK_GETTIME
-#ifdef CLOCK_MONOTONIC
-#define REF_CLOCK {CPERF_GETTIME, CLOCK_MONOTONIC}
-#else
-#define REF_CLOCK {CPERF_GETTIME, CLOCK_REALTIME}
-#endif
-#else
-#ifdef TARGET_COMPILER_MSVC
-#define REF_CLOCK {CPERF_QUERYPERFCOUNTER, 0}
-#else
-#define REF_CLOCK {CPERF_GTOD, 0}
-#endif
-#endif
-#endif
-
-#ifdef TARGET_COMPILER_MSVC
-#define TSC_REF_CLOCK {CPERF_QUERYPERFCOUNTER, 0}
-#else
-#define TSC_REF_CLOCK {CPERF_GTOD, 0}
-#endif
-
-/*
- * Choices for REF_CLOCK in order of preference, from best to worst.
+ * Choices for ref_clock in order of preference, from best to worst.
  */
 struct clockspec ref_clock_choices[] = {
 #ifdef HAVE_CPU_CLOCK

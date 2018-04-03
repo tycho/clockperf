@@ -35,6 +35,7 @@ enum {
     CPERF_GETTICKCOUNT64,
     CPERF_TIMEGETTIME,
     CPERF_GETSYSTIME,
+    CPERF_GETSYSTIMEPRECISE,
     CPERF_UNBIASEDINTTIME
 };
 
@@ -173,6 +174,7 @@ struct clockspec ref_clock_choices[] = {
     {CPERF_TSC, 0},
 #endif
 #ifdef TARGET_OS_WINDOWS
+    {CPERF_GETSYSTIMEPRECISE, 0},
     {CPERF_QUERYPERFCOUNTER, 0},
 #endif
 #ifdef HAVE_MACH_TIME
@@ -257,6 +259,7 @@ clock_pair_t clock_pairs[] = {
     { {CPERF_GETTICKCOUNT64, 0},                     &ref_clock },
     { {CPERF_TIMEGETTIME, 0},                        &ref_clock },
     { {CPERF_GETSYSTIME, 0},                         &ref_clock },
+    { {CPERF_GETSYSTIMEPRECISE, 0},                  &ref_clock },
     { {CPERF_UNBIASEDINTTIME, 0},                    &ref_clock },
 #endif
     { {CPERF_NONE, 0},                               NULL }
@@ -499,6 +502,13 @@ static inline int clock_read(struct clockspec spec, uint64_t *output)
                 *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
             }
             break;
+        case CPERF_GETSYSTIMEPRECISE:
+            {
+                FILETIME ft;
+                GetSystemTimePreciseAsFileTime(&ft);
+                *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
+            }
+            break;
         case CPERF_UNBIASEDINTTIME:
             {
                 ULONGLONG t;
@@ -605,7 +615,9 @@ static const char *clock_name(struct clockspec spec)
     case CPERF_TIMEGETTIME:
         return "timeGetTime";
     case CPERF_GETSYSTIME:
-        return "GetSysTime";
+        return "SysTimeAsFile";
+    case CPERF_GETSYSTIMEPRECISE:
+        return "SysTimePrecAsFile";
     case CPERF_UNBIASEDINTTIME:
         return "UnbiasIntTime";
 #endif
@@ -1032,6 +1044,7 @@ static int clock_resolution(const struct clockspec spec, uint64_t *output)
             break;
         case CPERF_UNBIASEDINTTIME:
         case CPERF_GETSYSTIME:
+        case CPERF_GETSYSTIMEPRECISE:
             hz = 10000000ULL;
             break;
 #endif

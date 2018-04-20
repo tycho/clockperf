@@ -271,6 +271,7 @@ clock_pair_t clock_pairs[] = {
 
 static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
 {
+    int i;
     uint64_t ctr_last = 0, ctr_now = 0;
     struct clockspec *spec = ref_clock_choices;
 #ifdef _DEBUG
@@ -295,7 +296,7 @@ static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
         }
 
         /* Quick sanity check to ensure clock is advancing monotonically. */
-        for (int i = 0; i < 100; i++) {
+        for (i = 0; i < 100; i++) {
             if (clock_read(*spec, &ctr_now) || !ctr_now) {
                 /* Clock failed? If this didn't happen on the first attempt,
                  * then it really shouldn't happen at all. But checking this

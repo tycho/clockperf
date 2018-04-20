@@ -174,7 +174,9 @@ struct clockspec ref_clock_choices[] = {
     {CPERF_TSC, 0},
 #endif
 #ifdef TARGET_OS_WINDOWS
+#if _WIN32_WINNT >= 0x0602
     {CPERF_GETSYSTIMEPRECISE, 0},
+#endif
     {CPERF_QUERYPERFCOUNTER, 0},
 #endif
 #ifdef HAVE_MACH_TIME
@@ -259,7 +261,9 @@ clock_pair_t clock_pairs[] = {
     { {CPERF_GETTICKCOUNT64, 0},                     &ref_clock },
     { {CPERF_TIMEGETTIME, 0},                        &ref_clock },
     { {CPERF_GETSYSTIME, 0},                         &ref_clock },
+#if _WIN32_WINNT >= 0x0602
     { {CPERF_GETSYSTIMEPRECISE, 0},                  &ref_clock },
+#endif
     { {CPERF_UNBIASEDINTTIME, 0},                    &ref_clock },
 #endif
     { {CPERF_NONE, 0},                               NULL }
@@ -502,6 +506,7 @@ static inline int clock_read(struct clockspec spec, uint64_t *output)
                 *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
             }
             break;
+#if _WIN32_WINNT >= 0x0602
         case CPERF_GETSYSTIMEPRECISE:
             {
                 FILETIME ft;
@@ -509,6 +514,7 @@ static inline int clock_read(struct clockspec spec, uint64_t *output)
                 *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
             }
             break;
+#endif
         case CPERF_UNBIASEDINTTIME:
             {
                 ULONGLONG t;

@@ -54,7 +54,9 @@
 #include <windows.h>
 #endif
 
+#if !defined(TARGET_COMPILER_MINGW)
 #define HAVE_TIME
+#endif
 #ifndef TARGET_OS_WINDOWS
 /* On Cygwin/MinGW, ftime has a void return, so we can't use it. */
 #define HAVE_FTIME
@@ -67,7 +69,7 @@
 #endif
 
 #ifdef _POSIX_TIMERS
-#if _POSIX_TIMERS > 0
+#if _POSIX_TIMERS > 0 && !defined(TARGET_COMPILER_MINGW)
 #define HAVE_CLOCK_GETTIME
 #endif
 #endif

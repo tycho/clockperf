@@ -183,8 +183,8 @@ struct clockspec ref_clock_choices[] = {
     {CPERF_MACH_TIME, 0},
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-#ifdef CLOCK_MONOTONIC_RAW
-    {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},
+#ifdef CLOCK_MONOTONIC
+    {CPERF_GETTIME, CLOCK_MONOTONIC},
 #endif
     {CPERF_GETTIME, CLOCK_REALTIME},
 #endif

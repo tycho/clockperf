@@ -76,14 +76,11 @@ static void *drift_thread(void *pctx)
 	do {
 		uint64_t clk;
 		uint64_t ref;
-		while (ctx->state == 1) {
+		while (ctx->state == 1)
 			usleep(1000);
-		}
 
-		if (ctx->state == 2) {
-			ctx->state = 3;
+		if (ctx->state == 2)
 			break;
-		}
 
 		clock_read(clk_id, &clk);
 		clock_read(ref_id, &ref);
@@ -92,6 +89,8 @@ static void *drift_thread(void *pctx)
 		ctx->last_ref = ref;
 		ctx->state = 1;
 	} while(1);
+
+	ctx->state = 3;
 
 	return NULL;
 }

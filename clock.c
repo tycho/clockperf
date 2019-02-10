@@ -28,7 +28,14 @@ struct clockspec ref_clock = { CPERF_NONE, 0 };
  */
 static struct clockspec ref_clock_choices[] = {
 #ifdef HAVE_CPU_CLOCK
+/* Not safe to use TSC as a reference clock, unless we can empirically verify
+ * it's trustworthy. e.g. are TSCs on all cores synced?
+ *
+ * TODO: Add a CPU clock sanity test.
+ */
+#if 0
     {CPERF_TSC, 0},
+#endif
 #endif
 #ifdef TARGET_OS_WINDOWS
 #if _WIN32_WINNT >= 0x0602

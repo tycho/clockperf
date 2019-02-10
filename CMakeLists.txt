@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(clockperf C)
 
+find_package(Threads REQUIRED)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 add_custom_command(
@@ -16,6 +18,7 @@ add_custom_command(
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(clockperf clock.c drift.c main.c version.c build.h license.h)
+target_link_libraries(clockperf Threads::Threads)
 if(NOT MSVC)
 	target_link_libraries(clockperf m)
 endif()

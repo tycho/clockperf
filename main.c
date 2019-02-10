@@ -557,6 +557,19 @@ int main(UNUSED int argc, UNUSED char **argv)
         clock_compare(p->primary, *p->ref);
     }
 
+#ifdef HAVE_DRIFT_TESTS
+    printf("\n\n");
+    printf("== Clock Drift Tests ==\n");
+
+    for (p = clock_pairs; p && p->ref; p++) {
+        clock_choose_ref(p->primary);
+        printf("\n%9s: %s\n%9s: %s\n",
+            "Primary", clock_name(p->primary),
+            "Reference", clock_name(*p->ref));
+        run_drift(10000, p->primary, *p->ref);
+    }
+#endif
+
     return 0;
 }
 

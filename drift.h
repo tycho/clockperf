@@ -19,3 +19,11 @@
 
 #pragma once
 
+#include "platform.h"
+#include "clock.h"
+
+#ifdef TARGET_OS_LINUX
+#define HAVE_DRIFT_TESTS
+#endif
+
+void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid);

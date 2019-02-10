@@ -534,6 +534,8 @@ int main(UNUSED int argc, UNUSED char **argv)
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
 
+    printf("== Reported Clock Frequencies ==\n\n");
+
     for (p = clock_pairs; p && p->ref; p++) {
         uint64_t res;
         char buf[16];
@@ -541,11 +543,13 @@ int main(UNUSED int argc, UNUSED char **argv)
         if (clock_resolution(p->primary, &res) != 0)
             continue;
 
-        printf("%-22s resolution = %s\n",
+        printf("%-22s %s\n",
                 clock_name(p->primary),
                 pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
     }
-    printf("\n");
+    printf("\n\n");
+
+    printf("== Clock Behavior Tests ==\n\n");
 
     printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
     for (p = clock_pairs; p && p->ref; p++) {

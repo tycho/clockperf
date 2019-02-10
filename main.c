@@ -547,6 +547,7 @@ int main(UNUSED int argc, UNUSED char **argv)
 
     printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
     for (p = clock_pairs; p && p->ref; p++) {
+        clock_choose_ref(p->primary);
         clock_compare(p->primary, *p->ref);
     }
 

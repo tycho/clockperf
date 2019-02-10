@@ -46,6 +46,7 @@ struct clockspec {
 extern struct clockspec tsc_ref_clock;
 extern struct clockspec ref_clock;
 
+void clock_choose_ref(struct clockspec spec);
 int clock_read(struct clockspec spec, uint64_t *output);
 const char *clock_name(struct clockspec spec);
 int clock_resolution(const struct clockspec spec, uint64_t *output);

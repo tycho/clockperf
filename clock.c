@@ -61,7 +61,7 @@ static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
 #endif
     while (spec && spec->major != CPERF_NONE)
     {
-        if (spec->major == for_clock.major) {
+        if (memcmp(spec, &for_clock, sizeof(struct clockspec)) == 0) {
             /* You can't use the same clock as a reference for itself. */
             goto fail;
         }
@@ -520,6 +520,11 @@ const char *clock_name(struct clockspec spec)
     }
 }
 
+void clock_choose_ref(struct clockspec spec)
+{
+    choose_ref_clock(&ref_clock, spec);
+}
+
 /*
  * Attempts to get the clock resolution for the specified clock. Resolution is
  * returned in Hz.
@@ -529,10 +534,6 @@ const char *clock_name(struct clockspec spec)
 int clock_resolution(const struct clockspec spec, uint64_t *output)
 {
     uint64_t hz;
-
-    if (ref_clock.major == CPERF_NONE && spec.major != CPERF_TSC) {
-        choose_ref_clock(&ref_clock, spec);
-    }
 
     switch(spec.major) {
         case CPERF_NONE:

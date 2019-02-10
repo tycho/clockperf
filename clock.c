@@ -215,6 +215,10 @@ void init_cpu_clock(void)
             supports_atb = 1;
     }
 }
+#else
+void init_cpu_clock(void)
+{
+}
 #endif
 
 #ifdef HAVE_CPU_CLOCK
@@ -289,6 +293,10 @@ void calibrate_cpu_clock(void)
     avg = (avg + 9) / 10;
 
     cycles_per_usec = avg;
+}
+#else
+void calibrate_cpu_clock(void)
+{
 }
 #endif
 

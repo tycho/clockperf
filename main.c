@@ -525,12 +525,10 @@ int main(UNUSED int argc, UNUSED char **argv)
 
     printf("clockperf v%s\n\n", clockperf_version_long());
 
-#ifdef HAVE_CPU_CLOCK
     init_cpu_clock();
     calibrate_cpu_clock();
 
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
-#endif
 
     for (p = clock_pairs; p && p->ref; p++) {
         uint64_t res;

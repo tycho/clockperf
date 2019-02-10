@@ -62,7 +62,7 @@ CFLAGS := \
 	-Wstrict-prototypes
 
 LDFLAGS := -lm
-OBJECTS := clockperf.o drift.o version.o
+OBJECTS := clock.o main.o drift.o version.o
 
 ifneq ($(CC),clang)
 CFLAGS += -fPIC

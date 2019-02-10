@@ -220,6 +220,4 @@
 #  define TARGET_CPU_BITS 0
 #endif
 
-#endif
-
 /* vim: set ts=4 sts=4 sw=4 et: */

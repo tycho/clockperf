@@ -428,6 +428,7 @@ cleanup:
     free(cost_other);
 }
 
+#if 0
 #if defined(TARGET_CPU_X86_64) || defined(TARGET_CPU_X86)
 static int cpuid(uint32_t *_regs)
 {
@@ -514,6 +515,7 @@ static int have_invariant_tsc(void)
 
     return ret;
 }
+#endif
 
 int main(UNUSED int argc, UNUSED char **argv)
 {
@@ -528,7 +530,9 @@ int main(UNUSED int argc, UNUSED char **argv)
     init_cpu_clock();
     calibrate_cpu_clock();
 
+#if 0
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
+#endif
 
     for (p = clock_pairs; p && p->ref; p++) {
         uint64_t res;

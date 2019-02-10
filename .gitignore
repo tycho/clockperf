@@ -1,5 +1,7 @@
 *.[oad]
 /.cflags
-/clockperf
+/.vscode
+/build
 /build.h
+/clockperf
 /license.h

@@ -109,7 +109,7 @@ install: $(BINARY)
 depend: $(DEPS)
 
 $(BINARY): $(OBJECTS)
-	+$(QUIET_LINK)$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
+	+$(QUIET_LINK)$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(CFLAGS)
 
 distclean: clean
 

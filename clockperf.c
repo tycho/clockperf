@@ -18,6 +18,7 @@
  */
 
 #include "prefix.h"
+#include "drift.h"
 #include "version.h"
 
 enum {

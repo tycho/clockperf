@@ -176,7 +176,7 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 				uint64_t ref;
 				while (ctx->state == WAITING) {
 					//printf("thread %d:%d waiting\n", thread_id, i);
-					usleep(1000);
+					usleep(100);
 				}
 
 				if (ctx->state == EXITING)

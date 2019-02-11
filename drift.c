@@ -141,8 +141,8 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 
 					printf("%6" PRId64 ", ", delta_clk);
 
-					//if ((idx + 1) % 4 == 0 && idx < thread_count - 1)
-					//	printf("\n%11s", "");
+					if ((idx + 1) % 8 == 0 && idx < thread_count - 1)
+						printf("\n%11s", "");
 				}
 
 				printf("\n");

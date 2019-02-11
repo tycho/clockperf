@@ -37,7 +37,7 @@ typedef enum {
 	UNSTARTED = 0,  // not yet spawned
 	WAITING = 1,    // waiting for requests from master
 	REPORTING = 2,  // thread asked to report in
-	EXITING = 3,    // thread exiting
+	EXITING = 3,    // thread asked to exit
 	DEAD = 4,       // thread exited
 } thread_state;
 

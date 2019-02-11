@@ -59,10 +59,13 @@
 #if !defined(TARGET_COMPILER_MINGW)
 #define HAVE_TIME
 #endif
+
 #ifndef TARGET_OS_WINDOWS
 /* On Cygwin/MinGW, ftime has a void return, so we can't use it. */
 #define HAVE_FTIME
+#define HAVE_CLOCK
 #endif
+
 #include <sys/timeb.h>
 
 #ifdef TARGET_OS_MACOSX
@@ -76,10 +79,15 @@
 #endif
 #endif
 
-#ifdef __MACH__
+#ifdef TARGET_OS_MACOSX
 #ifdef CLOCK_REALTIME
 #define HAVE_CLOCK_GETTIME
 #endif
+#endif
+
+#ifdef TARGET_OS_WINDOWS
+#undef CLOCK_THREAD_CPUTIME_ID
+#undef CLOCK_PROCESS_CPUTIME_ID
 #endif
 
 #ifdef TARGET_CPU_PPC

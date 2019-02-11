@@ -67,7 +67,6 @@ static clock_pair_t clock_pairs[] = {
 #ifdef CLOCK_UPTIME_RAW_APPROX // OS X
     { {CPERF_GETTIME, CLOCK_UPTIME_RAW_APPROX},      &ref_clock },
 #endif
-#if !defined(TARGET_OS_WINDOWS)
 #ifdef CLOCK_PROCESS_CPUTIME_ID
     { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},     &ref_clock },
 #endif
@@ -75,8 +74,7 @@ static clock_pair_t clock_pairs[] = {
     { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},      &ref_clock },
 #endif
 #endif
-#endif
-#if !defined(TARGET_OS_WINDOWS)
+#ifdef HAVE_CLOCK
     { {CPERF_CLOCK, 0},                              &ref_clock },
 #endif
 #ifdef HAVE_GETRUSAGE

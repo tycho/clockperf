@@ -18,6 +18,7 @@
  */
 
 #include "prefix.h"
+#include "affinity.h"
 #include "clock.h"
 #include "drift.h"
 #include "version.h"
@@ -521,12 +522,13 @@ int main(UNUSED int argc, UNUSED char **argv)
 {
     clock_pair_t *p;
 
+    printf("clockperf v%s\n\n", clockperf_version_long());
+
 #ifdef TARGET_OS_WINDOWS
     timeBeginPeriod(1);
 #endif
 
-    printf("clockperf v%s\n\n", clockperf_version_long());
-
+    thread_init();
     init_cpu_clock();
     calibrate_cpu_clock();
 

@@ -19,11 +19,8 @@
 
 #pragma once
 
-#include "platform.h"
-#include "clock.h"
+void thread_init(void);
+uint32_t thread_count(void);
+int thread_bind(uint32_t id);
 
-#ifdef _OPENMP
-#define HAVE_DRIFT_TESTS
-#endif
-
-void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid);
+/* vim: set ts=4 sts=4 sw=4 noet: */

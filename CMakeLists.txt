@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(clockperf C)
 
+find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -17,8 +18,8 @@ add_custom_command(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/COPYING
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(clockperf clock.c drift.c main.c version.c build.h license.h)
-target_link_libraries(clockperf Threads::Threads)
+add_executable(clockperf affinity.c clock.c drift.c main.c version.c build.h license.h)
+target_link_libraries(clockperf Threads::Threads OpenMP::OpenMP_C)
 if(NOT MSVC)
 	target_link_libraries(clockperf m)
 endif()

@@ -46,6 +46,7 @@ CC := gcc
 CP := cp -L
 CFLAGS := \
 	$(OPTLEVEL) \
+	-fopenmp \
 	-fno-strict-aliasing \
 	-std=gnu11 \
 	-Werror=implicit \
@@ -62,7 +63,7 @@ CFLAGS := \
 	-Wstrict-prototypes
 
 LDFLAGS := -lm
-OBJECTS := clock.o main.o drift.o version.o
+OBJECTS := affinity.o clock.o drift.o main.o version.o
 
 ifneq ($(CC),clang)
 CFLAGS += -fPIC

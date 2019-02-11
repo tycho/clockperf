@@ -24,6 +24,9 @@ target_link_libraries(clockperf Threads::Threads OpenMP::OpenMP_C)
 if(NOT MSVC)
 	target_link_libraries(clockperf m)
 endif()
+if(WIN32 OR CYGWIN)
+	target_link_libraries(clockperf winmm)
+endif()
 target_include_directories(clockperf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 # vim: set ts=4 sts=4 sw=4 noet:

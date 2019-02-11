@@ -50,6 +50,19 @@ struct thread_ctx {
     char padding[104];         // padding to at least one L2 cache line wide
 };
 
+static inline int driftsleep(int usec)
+{
+#ifdef TARGET_OS_WINDOWS
+	usec /= 1000;
+	if (usec < 1)
+		usec = 1;
+	Sleep(usec);
+	return 0;
+#else
+	return usleep(usec);
+#endif
+}
+
 void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid)
 {
 	uint32_t idx, thread_count;
@@ -119,7 +132,7 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 				for (idx = 0; idx < thread_count; idx++) {
 					thread = &threads[idx];
 					while (thread->state == REPORTING)
-						usleep(10);
+						driftsleep(10);
 				}
 
 				expect_ms_ref = (curr_ref / 1000000ULL) - (start_ref / 1000000ULL);
@@ -147,7 +160,7 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 
 				printf("\n");
 
-				usleep(1000000);
+				driftsleep(1000000);
 			} while(expect_ms_ref < runtime_ms);
 
 			for (idx = 0; idx < thread_count; idx++) {
@@ -176,7 +189,7 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 				uint64_t ref;
 				while (ctx->state == WAITING) {
 					//printf("thread %d:%d waiting\n", thread_id, i);
-					usleep(100);
+					driftsleep(100);
 				}
 
 				if (ctx->state == EXITING)

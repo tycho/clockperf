@@ -20,7 +20,6 @@
 #pragma once
 
 void thread_init(void);
-uint32_t thread_count(void);
 int thread_bind(uint32_t id);
 
 /* vim: set ts=4 sts=4 sw=4 noet: */

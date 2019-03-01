@@ -97,37 +97,6 @@ void thread_init(void)
 #endif
 }
 
-uint32_t thread_count(void)
-{
-#if defined(TARGET_OS_MACOSX)
-	uint32_t count;
-	size_t  size = sizeof(count);
-
-	if (sysctlbyname("hw.ncpu", &count, &size, NULL, 0))
-		return 1;
-
-	return count;
-#elif defined(TARGET_OS_SOLARIS)
-	long count;
-
-	if ((count = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
-		return 1;
-
-	(void)state;
-
-	return (uint32_t)count;
-#else
-	static unsigned int i = 0;
-	if (i) return i;
-	if (thread_bind(0) != 0) {
-		fprintf(stderr, "ERROR: thread_bind() doesn't appear to be working correctly.\n");
-		abort();
-	}
-	while (thread_bind(++i) == 0);
-	return i;
-#endif
-}
-
 int thread_bind(uint32_t id)
 {
 #ifdef TARGET_OS_WINDOWS

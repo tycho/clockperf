@@ -533,6 +533,9 @@ int main(UNUSED int argc, UNUSED char **argv)
     thread_init();
     init_cpu_clock();
     calibrate_cpu_clock();
+#ifdef HAVE_DRIFT_TESTS
+    drift_init();
+#endif
 
 #if 0
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
@@ -570,7 +573,7 @@ int main(UNUSED int argc, UNUSED char **argv)
         printf("\n%9s: %s\n%9s: %s\n",
             "Primary", clock_name(p->primary),
             "Reference", clock_name(*p->ref));
-        run_drift(10000, p->primary, *p->ref);
+        drift_run(10000, p->primary, *p->ref);
     }
 #endif
 

@@ -26,4 +26,5 @@
 #define HAVE_DRIFT_TESTS
 #endif
 
-void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid);
+void drift_init(void);
+void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid);

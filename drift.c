@@ -63,17 +63,10 @@ static inline int driftsleep(int usec)
 #endif
 }
 
-void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid)
+static uint32_t thread_count;
+
+void drift_init(void)
 {
-	uint32_t idx, thread_count;
-	struct thread_ctx *threads = NULL;
-	struct global_cfg cfg;
-
-	memset(&cfg, 0, sizeof(struct global_cfg));
-
-	cfg.clk = clkid;
-	cfg.ref = refid;
-
 	#pragma omp parallel
 	{
 		#pragma omp master
@@ -81,6 +74,18 @@ void run_drift(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 			thread_count = omp_get_num_threads();
 		}
 	}
+}
+
+void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid)
+{
+	uint32_t idx;
+	struct thread_ctx *threads = NULL;
+	struct global_cfg cfg;
+
+	memset(&cfg, 0, sizeof(struct global_cfg));
+
+	cfg.clk = clkid;
+	cfg.ref = refid;
 
 	threads = (struct thread_ctx *)calloc(thread_count, sizeof(struct thread_ctx));
 

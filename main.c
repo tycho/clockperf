@@ -23,6 +23,13 @@
 #include "drift.h"
 #include "version.h"
 
+#ifdef _WIN32
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#endif
+
+#include <getopt.h>
+
 /*
  * We run tests in pairs of clocks, attempting to corroborate the first clock
  * with the results of the second clock. If there's too much mismatch between
@@ -520,11 +527,92 @@ static int have_invariant_tsc(void)
 }
 #endif
 
-int main(UNUSED int argc, UNUSED char **argv)
+static void version(void)
 {
+    printf("clockperf v%s\n\n", clockperf_version_long());
+}
+
+static void usage(const char *argv0)
+{
+    printf("usage: %s [--drift [clocksource]]\n", argv0);
+}
+
+
+/* Argh: https://stackoverflow.com/questions/1052746/getopt-does-not-parse-optional-arguments-to-parameters */
+#define FIX_OPTARG() do { \
+		if(!optarg \
+		   && optind < argc /* make sure optind is valid */ \
+		   && NULL != argv[optind] /* make sure it's not a null string */ \
+		   && '\0' != argv[optind][0] /* ... or an empty string */ \
+		   && '-' != argv[optind][0] /* ... or another option */ \
+		  ) { \
+		  /* update optind so the next getopt_long invocation skips argv[optind] */ \
+		  optarg = argv[optind++]; \
+		} \
+	} while(0);
+
+/* < 0   do all drift tests
+ *   0   do no drift tests
+ * > 0   do drift test for specific clock
+ */
+static int do_drift;
+
+int main(int argc, char **argv)
+{
+    int i;
     clock_pair_t *p;
 
-    printf("clockperf v%s\n\n", clockperf_version_long());
+    version();
+
+	while (1) {
+		static struct option long_options[] = {
+			{"version", no_argument, 0, 'v'},
+			{"help", no_argument, 0, 'h'},
+			{"drift", optional_argument, 0, 'd'},
+			{0, 0, 0, 0}
+		};
+		int c, option_index = 0;
+
+		c = getopt_long(argc, argv, "vhd::", long_options, &option_index);
+		if (c == -1)
+			break;
+		switch (c) {
+		case 0:
+			break;
+		case 'd':
+			do_drift = -1;
+            FIX_OPTARG();
+            if (optarg) {
+                /* Find matching clock */
+                for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+                    const char *name = clock_name(p->primary);
+                    if (strcasecmp(optarg, name) == 0) {
+                        /* exact match, we're done. */
+                        do_drift = i + 1;
+                        break;
+                    }
+                    if (strncasecmp(optarg, name, strlen(optarg)) == 0) {
+                        /* partial match, keep going in case there's an exact one. */
+                        do_drift = i + 1;
+                    }
+                }
+                if (do_drift == -1) {
+                    /* no matches, but an argument was provided. */
+                    printf("error: could not find clock named '%s'\n", optarg);
+                    return 1;
+                }
+            }
+			break;
+		case 'v':
+            /* We already printed the version. We're done. */
+            return 0;
+		case 'h':
+		case '?':
+		default:
+			usage(argv[0]);
+            return 0;
+		}
+	}
 
 #ifdef TARGET_OS_WINDOWS
     timeBeginPeriod(1);
@@ -541,41 +629,48 @@ int main(UNUSED int argc, UNUSED char **argv)
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
 
-    printf("== Reported Clock Frequencies ==\n\n");
+    if (do_drift <= 0) {
+        printf("== Reported Clock Frequencies ==\n\n");
 
-    for (p = clock_pairs; p && p->ref; p++) {
-        uint64_t res;
-        char buf[16];
+        for (p = clock_pairs; p && p->ref; p++) {
+            uint64_t res;
+            char buf[16];
 
-        if (clock_resolution(p->primary, &res) != 0)
-            continue;
+            if (clock_resolution(p->primary, &res) != 0)
+                continue;
 
-        printf("%-22s %s\n",
-                clock_name(p->primary),
-                pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
+            printf("%-22s %s\n",
+                    clock_name(p->primary),
+                    pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
+        }
+        printf("\n\n");
+
+        printf("== Clock Behavior Tests ==\n\n");
+
+        printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
+        for (p = clock_pairs; p && p->ref; p++) {
+            clock_choose_ref(p->primary);
+            clock_compare(p->primary, *p->ref);
+        }
+        printf("\n\n");
     }
-    printf("\n\n");
 
-    printf("== Clock Behavior Tests ==\n\n");
-
-    printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
-    for (p = clock_pairs; p && p->ref; p++) {
-        clock_choose_ref(p->primary);
-        clock_compare(p->primary, *p->ref);
-    }
-
+    if (do_drift) {
+        printf("== Clock Drift Tests ==\n");
 #ifdef HAVE_DRIFT_TESTS
-    printf("\n\n");
-    printf("== Clock Drift Tests ==\n");
-
-    for (p = clock_pairs; p && p->ref; p++) {
-        clock_choose_ref(p->primary);
-        printf("\n%9s: %s\n%9s: %s\n",
-            "Primary", clock_name(p->primary),
-            "Reference", clock_name(*p->ref));
-        drift_run(10000, p->primary, *p->ref);
-    }
+        for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+            if (do_drift > 0 && i != do_drift - 1)
+                continue;
+            clock_choose_ref(p->primary);
+            printf("\n%9s: %s\n%9s: %s\n",
+                "Primary", clock_name(p->primary),
+                "Reference", clock_name(*p->ref));
+            drift_run(do_drift > 0 ? 60000 : 10000, p->primary, *p->ref);
+        }
+#else
+        printf("error: support for clock drift tests is not compiled in to this build\n");
 #endif
+    }
 
     return 0;
 }

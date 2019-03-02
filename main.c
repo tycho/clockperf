@@ -534,7 +534,7 @@ static void version(void)
 
 static void usage(const char *argv0)
 {
-    printf("usage: %s [--drift [clocksource]]\n", argv0);
+    printf("usage: %s [--drift [clocksource] | --list]\n", argv0);
 }
 
 
@@ -556,6 +556,7 @@ static void usage(const char *argv0)
  * > 0   do drift test for specific clock
  */
 static int do_drift;
+static int do_list;
 
 int main(int argc, char **argv)
 {
@@ -569,6 +570,7 @@ int main(int argc, char **argv)
 			{"version", no_argument, 0, 'v'},
 			{"help", no_argument, 0, 'h'},
 			{"drift", optional_argument, 0, 'd'},
+			{"list", optional_argument, &do_list, 'l'},
 			{0, 0, 0, 0}
 		};
 		int c, option_index = 0;
@@ -628,6 +630,17 @@ int main(int argc, char **argv)
 #if 0
     printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
+
+    if (do_list) {
+        printf("== Clocksources Supported in This Build ==\n\n");
+
+        for (p = clock_pairs; p && p->ref; p++) {
+            printf("%-22s\n",
+                    clock_name(p->primary));
+        }
+        printf("\n");
+        return 0;
+    }
 
     if (do_drift <= 0) {
         printf("== Reported Clock Frequencies ==\n\n");

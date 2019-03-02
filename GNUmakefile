@@ -65,6 +65,11 @@ CFLAGS := \
 LDFLAGS := -lm
 OBJECTS := affinity.o clock.o drift.o main.o version.o
 
+ifdef NO_GNU_GETOPT
+CFLAGS += -Igetopt
+OBJECTS += getopt/getopt_long.o
+endif
+
 ifneq ($(CC),clang)
 CFLAGS += -fPIC
 LDFLAGS += -fPIC

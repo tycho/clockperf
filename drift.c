@@ -96,8 +96,6 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 		{
 			struct thread_ctx *thread, *this = NULL;
 			uint64_t start_ref, start_clk;
-
-			uint64_t curr_ref;
 			int64_t delta_clk, expect_ms_ref;
 
 			uint32_t unstarted;
@@ -122,9 +120,6 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 			clock_read(cfg.ref, &start_ref);
 
 			do {
-				//clock_read(cfg.clk, &curr_clk);
-				clock_read(cfg.ref, &curr_ref);
-
 				for (idx = 0; idx < thread_count; idx++) {
 					thread = &threads[idx];
 					if (thread->state > UNSTARTED)
@@ -140,8 +135,8 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 						driftsleep(10);
 				}
 
-				expect_ms_ref = (curr_ref / 1000000ULL) - (start_ref / 1000000ULL);
-				//expect_ms_clk = (curr_clk / 1000000ULL) - (start_clk / 1000000ULL);
+				expect_ms_ref = (this->last_ref / 1000000ULL) - (start_ref / 1000000ULL);
+				//expect_ms_clk = (this->last_clk / 1000000ULL) - (start_clk / 1000000ULL);
 
 				printf("%9" PRId64 ": ", expect_ms_ref);
 

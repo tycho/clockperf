@@ -203,6 +203,8 @@ int thread_bind(uint32_t id)
 
 #ifdef USE_CHUD
 	ret = (utilBindThreadToCPU(id) == 0) ? 0 : 1;
+#else
+#warning "thread_bind() not implementable on macOS"
 #endif
 
 	return ret == 0 ? 0 : 1;

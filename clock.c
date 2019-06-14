@@ -260,7 +260,7 @@ static uint32_t get_cycles_per_usec(void)
     return (c_e - c_s + 127) >> 7;
 }
 
-#define NR_TIME_ITERS 50
+#define NR_TIME_ITERS 10
 void calibrate_cpu_clock(void)
 {
     double delta, mean, S;

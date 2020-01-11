@@ -1,7 +1,7 @@
 /*
  * clockperf
  *
- * Copyright (c) 2016-2019, Steven Noonan <steven@uplinklabs.net>
+ * Copyright (c) 2016-2020, Steven Noonan <steven@uplinklabs.net>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

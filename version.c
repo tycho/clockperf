@@ -28,37 +28,37 @@
 
 void license(void)
 {
-	puts(CLOCKPERF_LICENSE);
+    puts(CLOCKPERF_LICENSE);
 }
 
 const char *clockperf_version_short(void)
 {
-	return CLOCKPERF_VERSION_TAG;
+    return CLOCKPERF_VERSION_TAG;
 }
 
 const char *clockperf_version_long(void)
 {
-	return CLOCKPERF_VERSION_LONG;
+    return CLOCKPERF_VERSION_LONG;
 }
 
 int clockperf_version_major(void)
 {
-	return CLOCKPERF_VERSION_MAJOR;
+    return CLOCKPERF_VERSION_MAJOR;
 }
 
 int clockperf_version_minor(void)
 {
-	return CLOCKPERF_VERSION_MINOR;
+    return CLOCKPERF_VERSION_MINOR;
 }
 
 int clockperf_version_revision(void)
 {
-	return CLOCKPERF_VERSION_REVISION;
+    return CLOCKPERF_VERSION_REVISION;
 }
 
 int clockperf_version_build(void)
 {
-	return CLOCKPERF_VERSION_BUILD;
+    return CLOCKPERF_VERSION_BUILD;
 }
 
 /* vim: set ts=4 sts=4 sw=4 et: */

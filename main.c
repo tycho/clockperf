@@ -540,16 +540,16 @@ static void usage(const char *argv0)
 
 /* Argh: https://stackoverflow.com/questions/1052746/getopt-does-not-parse-optional-arguments-to-parameters */
 #define FIX_OPTARG() do { \
-		if(!optarg \
-		   && optind < argc /* make sure optind is valid */ \
-		   && NULL != argv[optind] /* make sure it's not a null string */ \
-		   && '\0' != argv[optind][0] /* ... or an empty string */ \
-		   && '-' != argv[optind][0] /* ... or another option */ \
-		  ) { \
-		  /* update optind so the next getopt_long invocation skips argv[optind] */ \
-		  optarg = argv[optind++]; \
-		} \
-	} while(0);
+        if(!optarg \
+           && optind < argc /* make sure optind is valid */ \
+           && NULL != argv[optind] /* make sure it's not a null string */ \
+           && '\0' != argv[optind][0] /* ... or an empty string */ \
+           && '-' != argv[optind][0] /* ... or another option */ \
+          ) { \
+          /* update optind so the next getopt_long invocation skips argv[optind] */ \
+          optarg = argv[optind++]; \
+        } \
+    } while(0);
 
 /* < 0   do all drift tests
  *   0   do no drift tests
@@ -565,24 +565,24 @@ int main(int argc, char **argv)
 
     version();
 
-	while (1) {
-		static struct option long_options[] = {
-			{"version", no_argument, 0, 'v'},
-			{"help", no_argument, 0, 'h'},
-			{"drift", optional_argument, 0, 'd'},
-			{"list", optional_argument, 0, 'l'},
-			{0, 0, 0, 0}
-		};
-		int c, option_index = 0;
+    while (1) {
+        static struct option long_options[] = {
+            {"version", no_argument, 0, 'v'},
+            {"help", no_argument, 0, 'h'},
+            {"drift", optional_argument, 0, 'd'},
+            {"list", optional_argument, 0, 'l'},
+            {0, 0, 0, 0}
+        };
+        int c, option_index = 0;
 
-		c = getopt_long(argc, argv, "vhd:l", long_options, &option_index);
-		if (c == -1)
-			break;
-		switch (c) {
-		case 0:
-			break;
-		case 'd':
-			do_drift = -1;
+        c = getopt_long(argc, argv, "vhd:l", long_options, &option_index);
+        if (c == -1)
+            break;
+        switch (c) {
+        case 0:
+            break;
+        case 'd':
+            do_drift = -1;
             FIX_OPTARG();
             if (optarg) {
                 /* Find matching clock */
@@ -604,20 +604,20 @@ int main(int argc, char **argv)
                     return 1;
                 }
             }
-			break;
+            break;
         case 'l':
             do_list = 1;
             break;
-		case 'v':
+        case 'v':
             /* We already printed the version. We're done. */
             return 0;
-		case 'h':
-		case '?':
-		default:
-			usage(argv[0]);
+        case 'h':
+        case '?':
+        default:
+            usage(argv[0]);
             return 0;
-		}
-	}
+        }
+    }
 
 #ifdef TARGET_OS_WINDOWS
     timeBeginPeriod(1);

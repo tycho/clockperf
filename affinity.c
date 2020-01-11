@@ -81,15 +81,15 @@ void thread_init(void)
 {
 #ifdef TARGET_OS_WINDOWS
 #if _WIN32_WINNT < 0x0601
-	HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
-	GetActiveProcessorGroupCount = (fnGetActiveProcessorGroupCount)GetProcAddress(hKernel32, "GetActiveProcessorGroupCount");
-	GetActiveProcessorCount = (fnGetActiveProcessorCount)GetProcAddress(hKernel32, "GetActiveProcessorCount");
-	SetThreadGroupAffinity = (fnSetThreadGroupAffinity)GetProcAddress(hKernel32, "SetThreadGroupAffinity");
+    GetActiveProcessorGroupCount = (fnGetActiveProcessorGroupCount)GetProcAddress(hKernel32, "GetActiveProcessorGroupCount");
+    GetActiveProcessorCount = (fnGetActiveProcessorCount)GetProcAddress(hKernel32, "GetActiveProcessorCount");
+    SetThreadGroupAffinity = (fnSetThreadGroupAffinity)GetProcAddress(hKernel32, "SetThreadGroupAffinity");
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -101,113 +101,113 @@ int thread_bind(uint32_t id)
 {
 #ifdef TARGET_OS_WINDOWS
 
-	BOOL ret = FALSE;
-	HANDLE hThread = GetCurrentThread();
+    BOOL ret = FALSE;
+    HANDLE hThread = GetCurrentThread();
 
 #if _WIN32_WINNT < 0x0601
-	if (is_windows7_or_greater()) {
+    if (is_windows7_or_greater()) {
 #endif
-		DWORD threadsInGroup = 0;
-		WORD groupId, groupCount;
-		GROUP_AFFINITY affinity;
-		ZeroMemory(&affinity, sizeof(GROUP_AFFINITY));
+        DWORD threadsInGroup = 0;
+        WORD groupId, groupCount;
+        GROUP_AFFINITY affinity;
+        ZeroMemory(&affinity, sizeof(GROUP_AFFINITY));
 
-		groupCount = GetActiveProcessorGroupCount();
+        groupCount = GetActiveProcessorGroupCount();
 
-		for (groupId = 0; groupId < groupCount; groupId++) {
-			threadsInGroup = GetActiveProcessorCount(groupId);
-			if (id < threadsInGroup)
-				break;
-			id -= threadsInGroup;
-		}
+        for (groupId = 0; groupId < groupCount; groupId++) {
+            threadsInGroup = GetActiveProcessorCount(groupId);
+            if (id < threadsInGroup)
+                break;
+            id -= threadsInGroup;
+        }
 
-		if (groupId < groupCount && id < threadsInGroup) {
-			affinity.Group = groupId;
-			affinity.Mask = 1ULL << id;
+        if (groupId < groupCount && id < threadsInGroup) {
+            affinity.Group = groupId;
+            affinity.Mask = 1ULL << id;
 
-			ret = SetThreadGroupAffinity(hThread, &affinity, NULL);
-		}
+            ret = SetThreadGroupAffinity(hThread, &affinity, NULL);
+        }
 #if _WIN32_WINNT < 0x0601
-	} else {
-		DWORD mask;
+    } else {
+        DWORD mask;
 
-		if (id > 32)
-			return 1;
+        if (id > 32)
+            return 1;
 
-		mask = (1 << id);
+        mask = (1 << id);
 
-		ret = SetThreadAffinityMask(hThread, mask);
-	}
+        ret = SetThreadAffinityMask(hThread, mask);
+    }
 #endif
 
-	return (ret != FALSE) ? 0 : 1;
+    return (ret != FALSE) ? 0 : 1;
 
 #elif defined(TARGET_OS_LINUX) || defined(TARGET_OS_FREEBSD)
 
-	int ret;
+    int ret;
 
 #ifdef CPU_SET_S
-	size_t setsize = CPU_ALLOC_SIZE(MAX_CPUS);
-	CPUSET_T *set = CPU_ALLOC(MAX_CPUS);
-	pthread_t pth;
+    size_t setsize = CPU_ALLOC_SIZE(MAX_CPUS);
+    CPUSET_T *set = CPU_ALLOC(MAX_CPUS);
+    pthread_t pth;
 
-	pth = pthread_self();
+    pth = pthread_self();
 
-	CPU_ZERO_S(setsize, set);
-	CPU_SET_S(id, setsize, set);
-	ret = pthread_setaffinity_np(pth, setsize, set);
-	CPU_FREE(set);
+    CPU_ZERO_S(setsize, set);
+    CPU_SET_S(id, setsize, set);
+    ret = pthread_setaffinity_np(pth, setsize, set);
+    CPU_FREE(set);
 #else
-	size_t bits_per_set = sizeof(CPUSET_T) * 8;
-	size_t bits_per_subset = sizeof(CPUSET_MASK_T) * 8;
-	size_t setsize = sizeof(CPUSET_T) * (MAX_CPUS / bits_per_set);
-	size_t set_id, subset_id;
-	unsigned long long mask;
-	CPUSET_T *set = malloc(setsize);
-	pthread_t pth;
+    size_t bits_per_set = sizeof(CPUSET_T) * 8;
+    size_t bits_per_subset = sizeof(CPUSET_MASK_T) * 8;
+    size_t setsize = sizeof(CPUSET_T) * (MAX_CPUS / bits_per_set);
+    size_t set_id, subset_id;
+    unsigned long long mask;
+    CPUSET_T *set = malloc(setsize);
+    pthread_t pth;
 
-	pth = pthread_self();
+    pth = pthread_self();
 
-	for (set_id = 0; set_id < (MAX_CPUS / bits_per_set); set_id++)
-		CPU_ZERO(&set[set_id]);
+    for (set_id = 0; set_id < (MAX_CPUS / bits_per_set); set_id++)
+        CPU_ZERO(&set[set_id]);
 
-	set_id = id / bits_per_set;
-	id %= bits_per_set;
+    set_id = id / bits_per_set;
+    id %= bits_per_set;
 
-	subset_id = id / bits_per_subset;
-	id %= bits_per_subset;
+    subset_id = id / bits_per_subset;
+    id %= bits_per_subset;
 
-	mask = 1ULL << (unsigned long long)id;
+    mask = 1ULL << (unsigned long long)id;
 
-	((unsigned long *)set[set_id].__bits)[subset_id] |= mask;
-	ret = pthread_setaffinity_np(pth, setsize, set);
-	free(set);
+    ((unsigned long *)set[set_id].__bits)[subset_id] |= mask;
+    ret = pthread_setaffinity_np(pth, setsize, set);
+    free(set);
 #endif
 
-	return (ret == 0) ? 0 : 1;
+    return (ret == 0) ? 0 : 1;
 
 #elif defined(TARGET_OS_SOLARIS)
 
-	/*
-	 * This requires permissions, so can easily fail.
-	 */
-	if (processor_bind(P_LWPID, P_MYID, id, NULL) != 0) {
-		fprintf(stderr, "warning: failed to bind to CPU%u: %s\n",
-			id, strerror(errno));
-		return 1;
-	}
+    /*
+     * This requires permissions, so can easily fail.
+     */
+    if (processor_bind(P_LWPID, P_MYID, id, NULL) != 0) {
+        fprintf(stderr, "warning: failed to bind to CPU%u: %s\n",
+            id, strerror(errno));
+        return 1;
+    }
 
-	return 0;
+    return 0;
 #elif defined(TARGET_OS_MACOSX)
-	int ret = 1;
+    int ret = 1;
 
 #ifdef USE_CHUD
-	ret = (utilBindThreadToCPU(id) == 0) ? 0 : 1;
+    ret = (utilBindThreadToCPU(id) == 0) ? 0 : 1;
 #else
 #warning "thread_bind() not implementable on macOS"
 #endif
 
-	return ret == 0 ? 0 : 1;
+    return ret == 0 ? 0 : 1;
 #else
 #error "thread_bind() not defined for this platform"
 #endif

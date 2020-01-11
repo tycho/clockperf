@@ -570,12 +570,12 @@ int main(int argc, char **argv)
 			{"version", no_argument, 0, 'v'},
 			{"help", no_argument, 0, 'h'},
 			{"drift", optional_argument, 0, 'd'},
-			{"list", optional_argument, &do_list, 'l'},
+			{"list", optional_argument, 0, 'l'},
 			{0, 0, 0, 0}
 		};
 		int c, option_index = 0;
 
-		c = getopt_long(argc, argv, "vhd::", long_options, &option_index);
+		c = getopt_long(argc, argv, "vhd:l", long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -605,6 +605,9 @@ int main(int argc, char **argv)
                 }
             }
 			break;
+        case 'l':
+            do_list = 1;
+            break;
 		case 'v':
             /* We already printed the version. We're done. */
             return 0;

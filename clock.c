@@ -344,6 +344,8 @@ int clock_read(struct clockspec spec, uint64_t *output)
 #endif
         case CPERF_CLOCK:
             *output = clock() * CLOCK_RATIO;
+            if (*output == 0)
+                return 1;
             break;
 #ifdef HAVE_GETRUSAGE
         case CPERF_RUSAGE:

@@ -229,13 +229,13 @@ static void clock_compare(const struct clockspec self, const struct clockspec ot
     uint32_t samples = 4;
 
     if (clock_read(self, &t[0]) != 0) {
-        printf("Failed to read from %s clock (%u, %u)\n",
+        printf("Failed to read from clock '%s' (%u, %u)\n",
                 clock_name(self), self.major, self.minor);
         return;
     }
 
     if (clock_read(other, &t[0]) != 0) {
-        printf("Failed to read from %s clock (%u, %u)\n",
+        printf("Failed to read from clock '%s' (%u, %u)\n",
                 clock_name(other), other.major, other.minor);
         return;
     }

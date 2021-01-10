@@ -29,7 +29,7 @@ if lsb_release -c | grep -q bionic$; then
 	export ASAN_OPTIONS=detect_odr_violation=0
 fi
 
-meson . build-meson -Dbuildtype=release -Ddebug=false -Db_lto=true
+meson . build-meson -Dwerror=true -Dbuildtype=release -Ddebug=false -Db_lto=true
 
 # Build some tests with sanitizers
 if [[ $BUILD_SANITIZERS -ne 0 ]]; then

@@ -25,6 +25,8 @@ lm = compiler.find_library('m')
 threads = dependency('threads')
 openmp = dependency('openmp')
 
+add_project_arguments(compiler.first_supported_argument('-Wno-deprecated-declarations'), language: 'c')
+
 executable('clockperf',
            src,
            gen_build_h,

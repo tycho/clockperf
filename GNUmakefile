@@ -60,7 +60,8 @@ CFLAGS := \
 	-Wno-long-long \
 	-Wno-overlength-strings \
 	-Wold-style-definition \
-	-Wstrict-prototypes
+	-Wstrict-prototypes \
+	-Wno-deprecated-declarations
 
 LDFLAGS := -lm
 OBJECTS := affinity.o clock.o drift.o main.o version.o

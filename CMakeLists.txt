@@ -23,6 +23,7 @@ add_executable(clockperf affinity.c clock.c drift.c main.c version.c build.h lic
 target_link_libraries(clockperf Threads::Threads OpenMP::OpenMP_C)
 if(NOT MSVC)
 	target_link_libraries(clockperf m)
+	target_compile_options(clockperf PRIVATE -Wno-deprecated-declarations)
 endif()
 if(WIN32 OR CYGWIN OR MINGW)
 	target_link_libraries(clockperf winmm)

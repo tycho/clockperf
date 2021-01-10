@@ -19,4 +19,5 @@ PACKAGES=(
 	cmake
 )
 
-dnf install -y "${PACKAGES[@]}"
+dnf update -y | cat
+dnf install -y "${PACKAGES[@]}" | cat

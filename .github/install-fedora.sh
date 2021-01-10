@@ -16,6 +16,7 @@ PACKAGES=(
 	perl
 	pkgconf-pkg-config
 	which
+	cmake
 )
 
 dnf install -y "${PACKAGES[@]}"

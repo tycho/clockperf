@@ -4,6 +4,7 @@
 #
 set -x
 meson --version
+cmake --version
 g++ --version
 clang++ --version
 lsb_release -a

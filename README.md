@@ -1,4 +1,4 @@
-clockperf
+clockperf [![Build Status](https://github.com/tycho/clockperf/workflows/CI/badge.svg)](https://github.com/tycho/clockperf/actions) [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 =======
 
 This is a small utility for measuring clocksource behavior on Linux, BSDs, OS

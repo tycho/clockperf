@@ -3,7 +3,6 @@
 # This is an install script for Fedora-specific packages.
 #
 set -ex
-set -o pipefail
 
 # Base build packages
 PACKAGES=(
@@ -24,8 +23,8 @@ if ! grep '^fastestmirror' /etc/dnf/dnf.conf; then
 	echo 'fastestmirror=1' >> /etc/dnf/dnf.conf
 fi
 
-dnf clean all | cat
-dnf update -y | cat
-dnf install -y "${PACKAGES[@]}" | cat
+dnf clean all
+dnf update -y
+dnf install -y "${PACKAGES[@]}"
 
 exit 0

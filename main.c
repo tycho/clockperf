@@ -628,7 +628,8 @@ int main(int argc, char **argv)
     init_cpu_clock();
     calibrate_cpu_clock();
 #ifdef HAVE_DRIFT_TESTS
-    drift_init();
+    if (do_drift)
+        drift_init();
 #endif
 
 #if 0

@@ -609,7 +609,8 @@ int main(int argc, char **argv)
             do_list = 1;
             break;
         case 'v':
-            /* We already printed the version. We're done. */
+            /* We already printed the version. Only print the license. */
+            license();
             return 0;
         case 'h':
         case '?':

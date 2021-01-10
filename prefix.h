@@ -25,7 +25,8 @@
 #define _GNU_SOURCE
 
 #ifdef TARGET_OS_WINDOWS
-#define _WIN32_WINNT 0x0601
+#define WINVER 0x0A00
+#define _WIN32_WINNT 0x0A00
 #define _WIN32_LEAN_AND_MEAN
 #endif
 

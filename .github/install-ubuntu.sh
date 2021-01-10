@@ -12,4 +12,4 @@ locale-gen en_US.UTF-8
 
 PACKAGES=(git build-essential pkg-config meson clang perl lsb-release cmake)
 
-apt-get install -o=Dpkg::Use-Pty=0 -y "${PACKAGES[@]}"
+apt-get install -q -o=Dpkg::Use-Pty=0 -y "${PACKAGES[@]}"

@@ -9,6 +9,7 @@ APT_FLAGS=(-q -o=Dpkg::Use-Pty=0)
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get ${APT_FLAGS[@]} update
+apt-get ${APT_FLAGS[@]} -y dist-upgrade
 apt-get ${APT_FLAGS[@]} install -y locales
 locale-gen en_US.UTF-8
 

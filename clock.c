@@ -43,9 +43,6 @@ static struct clockspec ref_clock_choices[] = {
 #endif
     {CPERF_QUERYPERFCOUNTER, 0},
 #endif
-#ifdef HAVE_MACH_TIME
-    {CPERF_MACH_TIME, 0},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC
     {CPERF_GETTIME, CLOCK_MONOTONIC},
@@ -421,7 +418,12 @@ int clock_read(struct clockspec spec, uint64_t *output)
 #endif
 #ifdef HAVE_MACH_TIME
         case CPERF_MACH_TIME:
-            *output = mach_absolute_time();
+            {
+                static mach_timebase_info_data_t tb = {0, 0};
+                if (!tb.numer)
+                    mach_timebase_info(&tb);
+                *output = mach_absolute_time() * tb.numer / tb.denom;
+            }
             break;
 #endif
 #ifdef TARGET_OS_WINDOWS

@@ -10,6 +10,7 @@ PACKAGES=(
 	gcc
 	compiler-rt
 	libasan
+	libomp-devel
 	libubsan
 	clang
 	meson

@@ -12,6 +12,6 @@ apt-get ${APT_FLAGS[@]} update
 apt-get ${APT_FLAGS[@]} install -y locales
 locale-gen en_US.UTF-8
 
-PACKAGES=(git build-essential pkg-config meson clang perl lsb-release cmake)
+PACKAGES=(git build-essential pkg-config meson clang libomp-dev perl lsb-release cmake)
 
 apt-get ${APT_FLAGS[@]} install -y "${PACKAGES[@]}"

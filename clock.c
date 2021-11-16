@@ -161,6 +161,11 @@ static INLINE uint64_t cpu_clock_read(void)
     return ((uint64_t) hi << 32ULL) | lo;
 }
 #elif defined(TARGET_CPU_X86_64)
+static const char *cpu_clock_name(void)
+{
+    return "tsc";
+}
+
 void cpu_clock_init(void)
 {
 }

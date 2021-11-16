@@ -58,11 +58,26 @@ static struct clockspec ref_clock_choices[] = {
     {CPERF_NONE, 0}
 };
 
-static int choose_ref_clock(struct clockspec *ref, struct clockspec for_clock)
+static struct clockspec wall_clock_choices[] = {
+#ifdef TARGET_OS_WINDOWS
+#if _WIN32_WINNT >= 0x0602
+    {CPERF_GETSYSTIMEPRECISE, 0},
+#endif
+#endif
+#ifdef HAVE_CLOCK_GETTIME
+    {CPERF_GETTIME, CLOCK_REALTIME},
+#endif
+#ifdef HAVE_GETTIMEOFDAY
+    {CPERF_GTOD, 0},
+#endif
+    {CPERF_NONE, 0}
+};
+
+static int choose_ref_clock(struct clockspec *ref, struct clockspec *choices, struct clockspec for_clock)
 {
     int i;
     uint64_t ctr_last = 0, ctr_now = 0;
-    struct clockspec *spec = ref_clock_choices;
+    struct clockspec *spec = choices;
 #ifdef _DEBUG
     fprintf(stderr, "trying to choose reference clock for %s\n", clock_name(for_clock));
 #endif
@@ -295,7 +310,7 @@ void calibrate_cpu_clock(void)
     int i, samples;
 
     struct clockspec for_clock = {CPERF_TSC, 0};
-    choose_ref_clock(&tsc_ref_clock, for_clock);
+    choose_ref_clock(&tsc_ref_clock, ref_clock_choices, for_clock);
 
     cycles[0] = get_cycles_per_usec();
     S = delta = mean = 0.0;
@@ -566,7 +581,13 @@ const char *clock_name(struct clockspec spec)
 
 void clock_choose_ref(struct clockspec spec)
 {
-    choose_ref_clock(&ref_clock, spec);
+    choose_ref_clock(&ref_clock, ref_clock_choices, spec);
+}
+
+void clock_choose_ref_wall(void)
+{
+    struct clockspec nullclock = {};
+    choose_ref_clock(&ref_clock, wall_clock_choices, nullclock);
 }
 
 /*

@@ -35,7 +35,8 @@ enum {
     CPERF_TIMEGETTIME,
     CPERF_GETSYSTIME,
     CPERF_GETSYSTIMEPRECISE,
-    CPERF_UNBIASEDINTTIME
+    CPERF_UNBIASEDINTTIME,
+    CPERF_NUM_CLOCKS
 };
 
 struct clockspec {
@@ -47,6 +48,7 @@ extern struct clockspec tsc_ref_clock;
 extern struct clockspec ref_clock;
 
 void clock_choose_ref(struct clockspec spec);
+void clock_choose_ref_wall(void);
 int clock_read(struct clockspec spec, uint64_t *output);
 const char *clock_name(struct clockspec spec);
 int clock_resolution(const struct clockspec spec, uint64_t *output);

@@ -59,7 +59,11 @@ typedef struct _clock_pair_t {
     struct clockspec *ref;
 } clock_pair_t;
 
-#if defined(TARGET_CPU_X86) || defined(TARGET_CPU_PPC) || defined(TARGET_CPU_X86_64)
+#if    defined(TARGET_CPU_X86) \
+    || defined(TARGET_CPU_X86_64) \
+    || defined(TARGET_CPU_PPC) \
+    /* Disabled for now: CNTVCT_EL0 seems to stop ticking on thread sleep? */
+    /* || (defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64) */
 #  define HAVE_CPU_CLOCK
 #endif
 

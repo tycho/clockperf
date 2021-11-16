@@ -157,6 +157,33 @@ static INLINE uint64_t get_cpu_clock(void)
     return ((uint64_t) hi << 32ULL) | lo;
 #endif
 }
+
+#elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
+
+void init_cpu_clock(void)
+{
+}
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_ReadStatusReg)
+#ifndef ARM64_CNTVCT
+#define ARM64_CNTVCT ARM64_SYSREG(3, 3, 14, 0, 2)
+#endif
+static INLINE uint64_t get_cpu_clock()
+{
+    return _ReadStatusReg(ARM64_CNTVCT);
+}
+#else
+static INLINE uint64_t get_cpu_clock()
+{
+    unsigned long long cval;
+    asm volatile("mrs %0, cntvct_el0"
+                 : "=r"(cval));
+    return cval;
+}
+#endif
+
 #elif defined(TARGET_CPU_PPC)
 
 /* Indirect stringification.  Doing two levels allows the parameter to be

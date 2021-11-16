@@ -20,6 +20,8 @@
 #include "prefix.h"
 #include "clock.h"
 
+#include <limits.h>
+
 struct clockspec tsc_ref_clock = { CPERF_NONE, 0 };
 struct clockspec ref_clock = { CPERF_NONE, 0 };
 
@@ -283,12 +285,22 @@ void cpu_clock_init(void)
 #endif
 
 #ifdef HAVE_CPU_CLOCK
-static uint32_t cycles_per_usec;
 
-static uint32_t get_cycles_per_usec(void)
+static unsigned long long cycles_per_msec;
+static unsigned long long cycles_start;
+static unsigned long long clock_mult;
+static unsigned long long max_cycles_mask;
+static unsigned long long nsecs_for_max_cycles;
+static unsigned int clock_shift;
+static unsigned int max_cycles_shift;
+#define MAX_CLOCK_SEC 60*60
+#define NR_TIME_ITERS 50
+
+static unsigned long get_cycles_per_msec(void)
 {
     uint64_t wc_s, wc_e;
     uint64_t c_s, c_e;
+    uint64_t elapsed;
 
     if (clock_read(tsc_ref_clock, &wc_s)) {
         fprintf(stderr, "Reference clock '%s' died while measuring TSC frequency\n",
@@ -297,63 +309,127 @@ static uint32_t get_cycles_per_usec(void)
     }
     c_s = cpu_clock_read();
     do {
-        uint64_t elapsed;
-
         if (clock_read(tsc_ref_clock, &wc_e)) {
             fprintf(stderr, "Reference clock '%s' died while measuring TSC frequency\n",
                     clock_name(tsc_ref_clock));
             abort();
         }
+        c_e = cpu_clock_read();
         elapsed = wc_e - wc_s;
         if (elapsed >= 1280000ULL) {
-            c_e = cpu_clock_read();
             break;
         }
     } while (1);
 
-    return (c_e - c_s + 127) >> 7;
+    return (c_e - c_s) * 1000000 / elapsed;
 }
 
-#define NR_TIME_ITERS 50
+#ifndef min
+#define min(x,y) ({ \
+    __typeof__(x) _x = (x); \
+    __typeof__(y) _y = (y); \
+    (void) (&_x == &_y);        \
+    _x < _y ? _x : _y; })
+#endif
+
+#ifndef max
+#define max(x,y) ({ \
+    __typeof__(x) _x = (x); \
+    __typeof__(y) _y = (y); \
+    (void) (&_x == &_y);        \
+    _x > _y ? _x : _y; })
+#endif
+
 void cpu_clock_calibrate(void)
 {
-    double delta, mean, S;
-    uint32_t avg, cycles[NR_TIME_ITERS];
-    int i, samples;
+	double delta, mean, S;
+	uint64_t minc, maxc, avg, cycles[NR_TIME_ITERS];
+	int i, samples, sft = 0;
+	unsigned long long tmp, max_ticks, max_mult;
 
     struct clockspec for_clock = {CPERF_TSC, 0};
     choose_ref_clock(&tsc_ref_clock, ref_clock_choices, for_clock);
 
-    cycles[0] = get_cycles_per_usec();
-    S = delta = mean = 0.0;
-    for (i = 0; i < NR_TIME_ITERS; i++) {
-        cycles[i] = get_cycles_per_usec();
-        delta = cycles[i] - mean;
-        if (delta) {
-            mean += delta / (i + 1.0);
-            S += delta * (cycles[i] - mean);
-        }
+	cycles[0] = get_cycles_per_msec();
+	S = delta = mean = 0.0;
+	for (i = 0; i < NR_TIME_ITERS; i++) {
+		cycles[i] = get_cycles_per_msec();
+		delta = cycles[i] - mean;
+		if (delta) {
+			mean += delta / (i + 1.0);
+			S += delta * (cycles[i] - mean);
+		}
+	}
+
+	/*
+	 * The most common platform clock breakage is returning zero
+	 * indefinitely. Check for that and return failure.
+	 */
+	if (!cycles[0] && !cycles[NR_TIME_ITERS - 1]) {
+        fprintf(stderr, "CPU clock calibration failed!\n");
+        abort();
     }
 
-    S = sqrt(S / (NR_TIME_ITERS - 1.0));
+	S = sqrt(S / (NR_TIME_ITERS - 1.0));
 
-    samples = avg = 0;
-    for (i = 0; i < NR_TIME_ITERS; i++) {
-        double this = cycles[i];
+	minc = ~0ULL;
+	maxc = samples = avg = 0;
+	for (i = 0; i < NR_TIME_ITERS; i++) {
+		double this = cycles[i];
 
-        if ((fmax(this, mean) - fmin(this, mean)) > S)
-            continue;
-        samples++;
-        avg += this;
+		minc = min(cycles[i], minc);
+		maxc = max(cycles[i], maxc);
+
+		if ((fmax(this, mean) - fmin(this, mean)) > S)
+			continue;
+		samples++;
+		avg += this;
+	}
+
+	S /= (double) NR_TIME_ITERS;
+
+	avg /= samples;
+	cycles_per_msec = avg;
+
+	max_ticks = MAX_CLOCK_SEC * cycles_per_msec * 1000ULL;
+	max_mult = ULLONG_MAX / max_ticks;
+
+    /*
+     * Find the largest shift count that will produce
+     * a multiplier that does not exceed max_mult
+     */
+    tmp = max_mult * cycles_per_msec / 1000000;
+    while (tmp > 1) {
+            tmp >>= 1;
+            sft++;
     }
 
-    S /= (double)NR_TIME_ITERS;
-    mean /= 10.0;
+	clock_shift = sft;
+	clock_mult = (1ULL << sft) * 1000000 / cycles_per_msec;
 
-    avg /= samples;
-    avg = (avg + 9) / 10;
+	/*
+	 * Find the greatest power of 2 clock ticks that is less than the
+	 * ticks in MAX_CLOCK_SEC_2STAGE
+	 */
+	max_cycles_shift = max_cycles_mask = 0;
+	tmp = MAX_CLOCK_SEC * 1000ULL * cycles_per_msec;
+	while (tmp > 1) {
+		tmp >>= 1;
+		max_cycles_shift++;
+	}
+	/*
+	 * if use use (1ULL << max_cycles_shift) * 1000 / cycles_per_msec
+	 * here we will have a discontinuity every
+	 * (1ULL << max_cycles_shift) cycles
+	 */
+	nsecs_for_max_cycles = ((1ULL << max_cycles_shift) * clock_mult)
+					>> clock_shift;
 
-    cycles_per_usec = avg;
+	/* Use a bitmask to calculate ticks % (1ULL << max_cycles_shift) */
+	for (tmp = 0; tmp < max_cycles_shift; tmp++)
+		max_cycles_mask |= 1ULL << tmp;
+
+	cycles_start = cpu_clock_read();
 }
 #else
 void cpu_clock_calibrate(void)
@@ -375,9 +451,6 @@ int clock_read(struct clockspec spec, uint64_t *output)
     } u;
 #endif
     switch(spec.major) {
-        case CPERF_NONE:
-            *output = 0;
-            break;
 #ifdef HAVE_CLOCK_GETTIME
         case CPERF_GETTIME:
             if (clock_gettime(spec.minor, &u.ts) != 0)
@@ -393,7 +466,14 @@ int clock_read(struct clockspec spec, uint64_t *output)
 #endif
 #ifdef HAVE_CPU_CLOCK
         case CPERF_TSC:
-            *output = (cpu_clock_read() * 1000ULL) / cycles_per_usec;
+            {
+                uint64_t nsecs, t, multiples;
+                t = cpu_clock_read();
+                multiples = t >> max_cycles_shift;
+                nsecs = multiples * nsecs_for_max_cycles;
+                nsecs += ((t & max_cycles_mask) * clock_mult) >> clock_shift;
+                *output = nsecs;
+            }
             break;
 #endif
         case CPERF_CLOCK:
@@ -499,7 +579,7 @@ const char *clock_name(struct clockspec spec)
     switch(spec.major) {
     case CPERF_NONE:
         return "null";
-        break;
+
     case CPERF_GETTIME:
         switch(spec.minor) {
 #ifdef CLOCK_REALTIME
@@ -638,7 +718,7 @@ int clock_resolution(const struct clockspec spec, uint64_t *output)
 #endif
 #ifdef HAVE_CPU_CLOCK
         case CPERF_TSC:
-            hz = cycles_per_usec * 1000000ULL;
+            hz = cycles_per_msec * 1000ULL;
             break;
 #endif
         case CPERF_CLOCK:

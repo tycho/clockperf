@@ -17,7 +17,35 @@
  *
  */
 
-#pragma once
+/* Clear all macros before continuing, in case another header (e.g.
+ * TargetConditionals.h in macOS) decides to use the same macro names.
+ */
+#undef TARGET_BIG_ENDIAN
+#undef TARGET_COMPILER_BORLAND
+#undef TARGET_COMPILER_CLANG
+#undef TARGET_COMPILER_CYGWIN
+#undef TARGET_COMPILER_GCC
+#undef TARGET_COMPILER_ICC
+#undef TARGET_COMPILER_MINGW
+#undef TARGET_COMPILER_VC
+#undef TARGET_CPU_ALPHA
+#undef TARGET_CPU_ARM
+#undef TARGET_CPU_BITS
+#undef TARGET_CPU_IA64
+#undef TARGET_CPU_PPC
+#undef TARGET_CPU_SPARC
+#undef TARGET_CPU_X64
+#undef TARGET_CPU_X86
+#undef TARGET_CPU_X86_64
+#undef TARGET_LITTLE_ENDIAN
+#undef TARGET_OS_FREEBSD
+#undef TARGET_OS_HAIKU
+#undef TARGET_OS_LINUX
+#undef TARGET_OS_MACOSX
+#undef TARGET_OS_NETBSD
+#undef TARGET_OS_OPENBSD
+#undef TARGET_OS_WINDOWS
+
 
 #undef PROCESSOR_DETECTED
 #undef COMPILER_DETECTED
@@ -34,7 +62,7 @@
 
 /* ARM */
 #if !defined (PROCESSOR_DETECTED)
-#  if defined (__arm__)
+#  if defined (__arm__) || defined (__AARCH64EL__) || defined(_M_ARM) || defined(_M_ARM64)
 #    define PROCESSOR_DETECTED
 #    define TARGET_CPU_ARM
 #    define TARGET_LITTLE_ENDIAN
@@ -161,13 +189,6 @@
 #endif
 
 #if !defined (OS_DETECTED)
-#  if defined (TARGET_CPU_ARM)
-#    define OS_DETECTED
-#    define TARGET_OS_NDSFIRMWARE
-#  endif
-#endif
-
-#if !defined (OS_DETECTED)
 #  if defined (__HAIKU__)
 #    define OS_DETECTED
 #    define TARGET_OS_HAIKU
@@ -202,7 +223,7 @@
 #  endif
 #endif
 
-#if defined (_LP64) || defined (__LP64__) || defined (_M_X64) || defined(_M_IA64)
+#if defined (_LP64) || defined (__LP64__) || defined (_M_X64) || defined(_M_IA64) || defined(__arm64__) || defined(_M_ARM64)
 #  define TARGET_CPU_BITS 64
 #else
 #  define TARGET_CPU_BITS 32
@@ -218,6 +239,22 @@
 
 #if !defined (TARGET_CPU_BITS)
 #  define TARGET_CPU_BITS 0
+#endif
+
+#if !defined (PROCESSOR_DETECTED)
+#error "Could not detect target CPU."
+#endif
+
+#if !defined (COMPILER_DETECTED)
+#error "Could not detect target compiler."
+#endif
+
+#if !defined (OS_DETECTED)
+#error "Could not detect target OS."
+#endif
+
+#if !defined (TARGET_CPU_BITS)
+#error "Could not detect 32-bit/64-bit architecture."
 #endif
 
 /* vim: set ts=4 sts=4 sw=4 et: */

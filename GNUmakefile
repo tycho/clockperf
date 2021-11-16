@@ -44,9 +44,16 @@ endif
 
 CC := gcc
 CP := cp -L
+
+COMPILER_ACCEPTS_OPENMP := $(shell $(CC) -fopenmp -xc /dev/null -o - &>/dev/null && echo yes || echo no)
+
+ifeq ($(COMPILER_ACCEPTS_OPENMP),yes)
+    OPENMP_ARG := -fopenmp
+endif
+
 CFLAGS := \
 	$(OPTLEVEL) \
-	-fopenmp \
+	$(OPENMP_ARG) \
 	-fno-strict-aliasing \
 	-std=gnu11 \
 	-Werror=implicit \

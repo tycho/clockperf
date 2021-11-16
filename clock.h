@@ -53,8 +53,8 @@ int clock_read(struct clockspec spec, uint64_t *output);
 const char *clock_name(struct clockspec spec);
 int clock_resolution(const struct clockspec spec, uint64_t *output);
 
-void init_cpu_clock(void);
-void calibrate_cpu_clock(void);
+void cpu_clock_init(void);
+void cpu_clock_calibrate(void);
 
 typedef struct _clock_pair_t {
     struct clockspec primary;

@@ -635,8 +635,8 @@ int main(int argc, char **argv)
 #endif
 
     thread_init();
-    init_cpu_clock();
-    calibrate_cpu_clock();
+    cpu_clock_init();
+    cpu_clock_calibrate();
 #ifdef HAVE_DRIFT_TESTS
     if (do_drift)
         drift_init();

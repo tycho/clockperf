@@ -134,11 +134,16 @@ fail:
 }
 
 #if defined(TARGET_CPU_X86)
-void init_cpu_clock(void)
+static const char *cpu_clock_name(void)
+{
+    return "tsc";
+}
+
+void cpu_clock_init(void)
 {
 }
 
-static INLINE uint64_t get_cpu_clock(void)
+static INLINE uint64_t cpu_clock_read(void)
 {
     uint32_t lo, hi;
 
@@ -154,11 +159,11 @@ static INLINE uint64_t get_cpu_clock(void)
     return ((uint64_t) hi << 32ULL) | lo;
 }
 #elif defined(TARGET_CPU_X86_64)
-void init_cpu_clock(void)
+void cpu_clock_init(void)
 {
 }
 
-static INLINE uint64_t get_cpu_clock(void)
+static INLINE uint64_t cpu_clock_read(void)
 {
 #ifdef TARGET_COMPILER_MSVC
     return __rdtsc();
@@ -172,7 +177,12 @@ static INLINE uint64_t get_cpu_clock(void)
 
 #elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
 
-void init_cpu_clock(void)
+static const char *cpu_clock_name(void)
+{
+    return "cntvct";
+}
+
+void cpu_clock_init(void)
 {
 }
 
@@ -182,12 +192,12 @@ void init_cpu_clock(void)
 #ifndef ARM64_CNTVCT
 #define ARM64_CNTVCT ARM64_SYSREG(3, 3, 14, 0, 2)
 #endif
-static INLINE uint64_t get_cpu_clock()
+static INLINE uint64_t cpu_clock_read()
 {
     return _ReadStatusReg(ARM64_CNTVCT);
 }
 #else
-static INLINE uint64_t get_cpu_clock()
+static INLINE uint64_t cpu_clock_read()
 {
     unsigned long long cval;
     asm volatile("mrs %0, cntvct_el0"
@@ -218,7 +228,7 @@ static INLINE uint64_t get_cpu_clock()
 
 static int supports_atb = 0;
 
-static INLINE uint64_t get_cpu_clock(void)
+static INLINE uint64_t cpu_clock_read(void)
 {
     uint64_t result = 0;
     uint32_t upper, lower, tmp;
@@ -242,11 +252,16 @@ static INLINE uint64_t get_cpu_clock(void)
 static void atb_child(void)
 {
     supports_atb = 1;
-    get_cpu_clock();
+    cpu_clock_read();
     _exit(0);
 }
 
-void init_cpu_clock(void)
+static const char *cpu_clock_name(void)
+{
+    return supports_atb ? "atb" : "tbr";
+}
+
+void cpu_clock_init(void)
 {
     pid_t pid;
 
@@ -262,7 +277,7 @@ void init_cpu_clock(void)
     }
 }
 #else
-void init_cpu_clock(void)
+void cpu_clock_init(void)
 {
 }
 #endif
@@ -280,7 +295,7 @@ static uint32_t get_cycles_per_usec(void)
                 clock_name(tsc_ref_clock));
         abort();
     }
-    c_s = get_cpu_clock();
+    c_s = cpu_clock_read();
     do {
         uint64_t elapsed;
 
@@ -291,7 +306,7 @@ static uint32_t get_cycles_per_usec(void)
         }
         elapsed = wc_e - wc_s;
         if (elapsed >= 1280000ULL) {
-            c_e = get_cpu_clock();
+            c_e = cpu_clock_read();
             break;
         }
     } while (1);
@@ -300,7 +315,7 @@ static uint32_t get_cycles_per_usec(void)
 }
 
 #define NR_TIME_ITERS 50
-void calibrate_cpu_clock(void)
+void cpu_clock_calibrate(void)
 {
     double delta, mean, S;
     uint32_t avg, cycles[NR_TIME_ITERS];
@@ -341,7 +356,7 @@ void calibrate_cpu_clock(void)
     cycles_per_usec = avg;
 }
 #else
-void calibrate_cpu_clock(void)
+void cpu_clock_calibrate(void)
 {
 }
 #endif
@@ -378,7 +393,7 @@ int clock_read(struct clockspec spec, uint64_t *output)
 #endif
 #ifdef HAVE_CPU_CLOCK
         case CPERF_TSC:
-            *output = (get_cpu_clock() * 1000ULL) / cycles_per_usec;
+            *output = (cpu_clock_read() * 1000ULL) / cycles_per_usec;
             break;
 #endif
         case CPERF_CLOCK:
@@ -540,7 +555,7 @@ const char *clock_name(struct clockspec spec)
 #endif
 #ifdef HAVE_CPU_CLOCK
     case CPERF_TSC:
-        return "tsc";
+        return cpu_clock_name();
 #endif
     case CPERF_CLOCK:
         return "clock";

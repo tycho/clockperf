@@ -21,6 +21,7 @@
 #include "affinity.h"
 #include "clock.h"
 #include "drift.h"
+#include "util.h"
 
 #ifdef HAVE_DRIFT_TESTS
 
@@ -49,19 +50,6 @@ struct thread_ctx {
 
     char padding[104];         // padding to at least one L2 cache line wide
 };
-
-static inline int driftsleep(int usec)
-{
-#ifdef TARGET_OS_WINDOWS
-    usec /= 1000;
-    if (usec < 1)
-        usec = 1;
-    Sleep(usec);
-    return 0;
-#else
-    return usleep(usec);
-#endif
-}
 
 static uint32_t thread_count;
 
@@ -132,7 +120,7 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
                 for (idx = 0; idx < thread_count; idx++) {
                     thread = &threads[idx];
                     while (thread->state == REPORTING)
-                        driftsleep(10);
+                        thread_sleep(10);
                 }
 
                 expect_ms_ref = (this->last_ref / 1000000ULL) - (start_ref / 1000000ULL);
@@ -160,7 +148,7 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 
                 printf("\n");
 
-                driftsleep(1000000);
+                thread_sleep(1000000);
             } while(expect_ms_ref < runtime_ms);
 
             for (idx = 0; idx < thread_count; idx++) {
@@ -189,7 +177,7 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
                 uint64_t ref;
                 while (ctx->state == WAITING) {
                     //printf("thread %d:%d waiting\n", thread_id, i);
-                    driftsleep(100);
+                    thread_sleep(100);
                 }
 
                 if (ctx->state == EXITING)

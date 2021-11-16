@@ -19,7 +19,7 @@ add_custom_command(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/COPYING
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(clockperf affinity.c clock.c drift.c main.c version.c build.h license.h)
+add_executable(clockperf affinity.c clock.c drift.c main.c util.c version.c build.h license.h)
 target_link_libraries(clockperf Threads::Threads OpenMP::OpenMP_C)
 if(NOT MSVC)
 	target_link_libraries(clockperf m)

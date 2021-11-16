@@ -21,6 +21,7 @@
 #include "affinity.h"
 #include "clock.h"
 #include "drift.h"
+#include "util.h"
 #include "version.h"
 
 #ifdef _WIN32
@@ -556,6 +557,7 @@ static void usage(const char *argv0)
  * > 0   do drift test for specific clock
  */
 static int do_drift;
+static int do_monitor;
 static int do_list;
 
 int main(int argc, char **argv)
@@ -570,6 +572,7 @@ int main(int argc, char **argv)
             {"version", no_argument, 0, 'v'},
             {"help", no_argument, 0, 'h'},
             {"drift", optional_argument, 0, 'd'},
+            {"monitor", optional_argument, 0, 'm'},
             {"list", optional_argument, 0, 'l'},
             {0, 0, 0, 0}
         };
@@ -582,27 +585,34 @@ int main(int argc, char **argv)
         case 0:
             break;
         case 'd':
-            do_drift = -1;
-            FIX_OPTARG();
-            if (optarg) {
-                /* Find matching clock */
-                for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
-                    const char *name = clock_name(p->primary);
-                    if (strcasecmp(optarg, name) == 0) {
-                        /* exact match, we're done. */
-                        do_drift = i + 1;
-                        break;
+        case 'm':
+            {
+                int v = -1;
+                FIX_OPTARG();
+                if (optarg) {
+                    /* Find matching clock */
+                    for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+                        const char *name = clock_name(p->primary);
+                        if (strcasecmp(optarg, name) == 0) {
+                            /* exact match, we're done. */
+                            v = i + 1;
+                            break;
+                        }
+                        if (strncasecmp(optarg, name, strlen(optarg)) == 0) {
+                            /* partial match, keep going in case there's an exact one. */
+                            v = i + 1;
+                        }
                     }
-                    if (strncasecmp(optarg, name, strlen(optarg)) == 0) {
-                        /* partial match, keep going in case there's an exact one. */
-                        do_drift = i + 1;
+                    if (v == -1) {
+                        /* no matches, but an argument was provided. */
+                        printf("error: could not find clock named '%s'\n", optarg);
+                        return 1;
                     }
                 }
-                if (do_drift == -1) {
-                    /* no matches, but an argument was provided. */
-                    printf("error: could not find clock named '%s'\n", optarg);
-                    return 1;
-                }
+                if (c == 'd')
+                    do_drift = v;
+                else if (c == 'm')
+                    do_monitor = v;
             }
             break;
         case 'l':
@@ -647,7 +657,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    if (do_drift <= 0) {
+    if (do_drift <= 0 && !do_monitor) {
         printf("== Reported Clock Frequencies ==\n\n");
 
         for (p = clock_pairs; p && p->ref; p++) {
@@ -688,6 +698,44 @@ int main(int argc, char **argv)
 #else
         printf("error: support for clock drift tests is not compiled in to this build\n");
 #endif
+    }
+
+    if (do_monitor) {
+        uint64_t base_values[CPERF_NUM_CLOCKS];
+        uint64_t current_values[CPERF_NUM_CLOCKS];
+
+        uint64_t wall_time_base, wall_time;
+
+        printf("== Monitoring Raw Clock Values ==\n");
+
+        // Read values once to get base values
+        for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+            if (clock_read(p->primary, &base_values[i]))
+                base_values[i] = ~0ULL;
+        }
+
+        // Choose a wall clock for reference
+        clock_choose_ref_wall();
+
+        clock_read(ref_clock, &wall_time_base);
+        do {
+            clock_read(ref_clock, &wall_time);
+
+            printf("Elapsed: %" PRIu64" ms\n", (wall_time - wall_time_base) / 1000000);
+
+            for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+                if (do_monitor > 0 && i != do_monitor - 1)
+                    continue;
+                clock_read(p->primary, &current_values[i]);
+                printf("%22s: +%-20" PRIu64 " ms (%-20" PRIu64 " ms)\n", clock_name(p->primary),
+                        (current_values[i] - base_values[i]) / 1000000,
+                        current_values[i] / 1000000);
+            }
+            printf("\n");
+
+            // 1000ms
+            thread_sleep(1000 * 1000);
+        } while (1);
     }
 
     return 0;

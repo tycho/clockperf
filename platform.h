@@ -223,7 +223,7 @@
 #  endif
 #endif
 
-#if defined (_LP64) || defined (__LP64__) || defined (_M_X64) || defined(_M_IA64) || defined(__arm64__) || defined(_M_ARM64)
+#if defined (_LP64) || defined (__LP64__) || defined (_M_X64) || defined(_M_IA64) || defined(__aarch64__) || defined(_M_ARM64)
 #  define TARGET_CPU_BITS 64
 #else
 #  define TARGET_CPU_BITS 32

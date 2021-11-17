@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 $|=1;	# Flush writes as soon as print finishes.
 
 use strict;
@@ -25,11 +25,7 @@ close RELEASEVER;
 mkdir dirname($outfile);
 
 if (-d "$scriptpath/../.git" ) {
-	if ( !$Win32 && `which git` ) {
-		$in_git = 1;
-	} else {
-		$in_git = 0;
-	}
+	$in_git = 1;
 } else {
 	$in_git = 0;
 }

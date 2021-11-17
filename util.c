@@ -85,10 +85,16 @@ void timers_init(void)
             return;
     }
 
+    /* Disabled for now, need to understand why a waitable timer would fire too
+     * early (e.g. run with --drift and you'll see it fire multiple times per
+     * second)
+     */
+#if 0
     s_timer = CreateWaitableTimerEx(
             NULL, NULL,
             CREATE_WAITABLE_TIMER_MANUAL_RESET | CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
             TIMER_ALL_ACCESS);
+#endif
 #endif
 }
 

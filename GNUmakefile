@@ -45,7 +45,7 @@ endif
 CC := gcc
 CP := cp -L
 
-COMPILER_ACCEPTS_OPENMP := $(shell $(CC) -fopenmp -xc /dev/null -o - &>/dev/null && echo yes || echo no)
+COMPILER_ACCEPTS_OPENMP := $(shell $(CC) -c -fopenmp -xc /dev/null -o /dev/null &>/dev/null && echo yes || echo no)
 
 ifeq ($(COMPILER_ACCEPTS_OPENMP),yes)
     OPENMP_ARG := -fopenmp

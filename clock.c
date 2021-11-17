@@ -721,6 +721,11 @@ void clock_choose_ref_wall(void)
     choose_ref_clock(&ref_clock, wall_clock_choices, nullclock);
 }
 
+void clock_set_ref(struct clockspec spec)
+{
+    ref_clock = spec;
+}
+
 /*
  * Attempts to get the clock resolution for the specified clock. Resolution is
  * returned in Hz.

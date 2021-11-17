@@ -20,6 +20,7 @@
 #pragma once
 
 enum {
+    CPERF_NULL,
     CPERF_NONE,
     CPERF_GETTIME,
     CPERF_GTOD,
@@ -44,22 +45,17 @@ struct clockspec {
     uint32_t minor;
 };
 
-extern struct clockspec tsc_ref_clock;
 extern struct clockspec ref_clock;
 
 void clock_choose_ref(struct clockspec spec);
 void clock_choose_ref_wall(void);
+void clock_set_ref(struct clockspec spec);
 int clock_read(struct clockspec spec, uint64_t *output);
 const char *clock_name(struct clockspec spec);
 int clock_resolution(const struct clockspec spec, uint64_t *output);
 
 void cpu_clock_init(void);
 void cpu_clock_calibrate(void);
-
-typedef struct _clock_pair_t {
-    struct clockspec primary;
-    struct clockspec *ref;
-} clock_pair_t;
 
 #if    defined(TARGET_CPU_X86) \
     || defined(TARGET_CPU_X86_64) \

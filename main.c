@@ -36,76 +36,76 @@
  * with the results of the second clock. If there's too much mismatch between
  * the two, then a warning is printed.
  */
-static clock_pair_t clock_pairs[] = {
+static struct clockspec clock_sources[] = {
     /* Characterizes overhead of measurement mechanism. */
-    //{ {CPERF_NONE, 0},                               &ref_clock},
+    //{CPERF_NONE, 0},
 
 #ifdef HAVE_CPU_CLOCK
-    { {CPERF_TSC, 0},                                &tsc_ref_clock },
+    {CPERF_TSC, 0},
 #endif
 #ifdef HAVE_GETTIMEOFDAY
-    { {CPERF_GTOD, 0},                               &ref_clock },
+    {CPERF_GTOD, 0},
 #endif
 #ifdef HAVE_MACH_TIME
-    { {CPERF_MACH_TIME, 0},                          &ref_clock },
+    {CPERF_MACH_TIME, 0},
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-    { {CPERF_GETTIME, CLOCK_REALTIME},               &ref_clock },
+    {CPERF_GETTIME, CLOCK_REALTIME},
 #ifdef CLOCK_REALTIME_COARSE
-    { {CPERF_GETTIME, CLOCK_REALTIME_COARSE},        &ref_clock },
+    {CPERF_GETTIME, CLOCK_REALTIME_COARSE},
 #endif
 #ifdef CLOCK_MONOTONIC
-    { {CPERF_GETTIME, CLOCK_MONOTONIC},              &ref_clock },
+    {CPERF_GETTIME, CLOCK_MONOTONIC},
 #endif
 #ifdef CLOCK_MONOTONIC_COARSE
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},       &ref_clock },
+    {CPERF_GETTIME, CLOCK_MONOTONIC_COARSE},
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},          &ref_clock },
+    {CPERF_GETTIME, CLOCK_MONOTONIC_RAW},
 #endif
 #ifdef CLOCK_MONOTONIC_RAW_APPROX // OS X
-    { {CPERF_GETTIME, CLOCK_MONOTONIC_RAW_APPROX},   &ref_clock },
+    {CPERF_GETTIME, CLOCK_MONOTONIC_RAW_APPROX},
 #endif
 #ifdef CLOCK_BOOTTIME
-    { {CPERF_GETTIME, CLOCK_BOOTTIME},               &ref_clock },
+    {CPERF_GETTIME, CLOCK_BOOTTIME},
 #endif
 #ifdef CLOCK_UPTIME_RAW // OS X
-    { {CPERF_GETTIME, CLOCK_UPTIME_RAW},             &ref_clock },
+    {CPERF_GETTIME, CLOCK_UPTIME_RAW},
 #endif
 #ifdef CLOCK_UPTIME_RAW_APPROX // OS X
-    { {CPERF_GETTIME, CLOCK_UPTIME_RAW_APPROX},      &ref_clock },
+    {CPERF_GETTIME, CLOCK_UPTIME_RAW_APPROX},
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},     &ref_clock },
+    {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
-    { {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},      &ref_clock },
+    {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},
 #endif
 #endif
 #ifdef HAVE_CLOCK
-    { {CPERF_CLOCK, 0},                              &ref_clock },
+    {CPERF_CLOCK, 0},
 #endif
 #ifdef HAVE_GETRUSAGE
-    { {CPERF_RUSAGE, 0},                             &ref_clock },
+    {CPERF_RUSAGE, 0},
 #endif
 #ifdef HAVE_FTIME
-    { {CPERF_FTIME, 0},                              &ref_clock },
+    {CPERF_FTIME, 0},
 #endif
 #ifdef HAVE_TIME
-    { {CPERF_TIME, 0},                               &ref_clock },
+    {CPERF_TIME, 0},
 #endif
 #ifdef TARGET_OS_WINDOWS
-    { {CPERF_QUERYPERFCOUNTER, 0},                   &ref_clock },
-    { {CPERF_GETTICKCOUNT, 0},                       &ref_clock },
-    { {CPERF_GETTICKCOUNT64, 0},                     &ref_clock },
-    { {CPERF_TIMEGETTIME, 0},                        &ref_clock },
-    { {CPERF_GETSYSTIME, 0},                         &ref_clock },
+    {CPERF_QUERYPERFCOUNTER, 0},
+    {CPERF_GETTICKCOUNT, 0},
+    {CPERF_GETTICKCOUNT64, 0},
+    {CPERF_TIMEGETTIME, 0},
+    {CPERF_GETSYSTIME, 0},
 #if _WIN32_WINNT >= 0x0602
-    { {CPERF_GETSYSTIMEPRECISE, 0},                  &ref_clock },
+    {CPERF_GETSYSTIMEPRECISE, 0},
 #endif
-    { {CPERF_UNBIASEDINTTIME, 0},                    &ref_clock },
+    {CPERF_UNBIASEDINTTIME, 0},
 #endif
-    { {CPERF_NONE, 0},                               NULL }
+    {CPERF_NULL, 0},
 };
 
 static int compare_double(const void *pa, const void *pb)
@@ -547,7 +547,9 @@ static void version(void)
 
 static void usage(const char *argv0)
 {
-    printf("usage: %s [--drift [clocksource] | --monitor [clocksource] | --list]\n", argv0);
+    printf("usage:\n");
+    printf("  %s [--drift [clocksource] | --monitor [clocksource]] [--ref reference-clocksource]\n", argv0);
+    printf("  %s --list\n", argv0);
 }
 
 
@@ -571,11 +573,12 @@ static void usage(const char *argv0)
 static int do_drift;
 static int do_monitor;
 static int do_list;
+static int ref_index;
 
 int main(int argc, char **argv)
 {
     int i;
-    clock_pair_t *p;
+    struct clockspec *p;
 
     version();
 
@@ -585,6 +588,7 @@ int main(int argc, char **argv)
             {"help", no_argument, 0, 'h'},
             {"drift", optional_argument, 0, 'd'},
             {"monitor", optional_argument, 0, 'm'},
+            {"ref", optional_argument, 0, 'r'},
             {"list", optional_argument, 0, 'l'},
             {0, 0, 0, 0}
         };
@@ -598,13 +602,14 @@ int main(int argc, char **argv)
             break;
         case 'd':
         case 'm':
+        case 'r':
             {
                 int v = -1;
                 FIX_OPTARG();
                 if (optarg) {
                     /* Find matching clock */
-                    for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
-                        const char *name = clock_name(p->primary);
+                    for (i = 0, p = clock_sources; p->major != CPERF_NULL; i++, p++) {
+                        const char *name = clock_name(*p);
                         if (strcasecmp(optarg, name) == 0) {
                             /* exact match, we're done. */
                             v = i + 1;
@@ -625,6 +630,8 @@ int main(int argc, char **argv)
                     do_drift = v;
                 else if (c == 'm')
                     do_monitor = v;
+                else if (c == 'r')
+                    ref_index = v;
             }
             break;
         case 'l':
@@ -658,9 +665,9 @@ int main(int argc, char **argv)
     if (do_list) {
         printf("== Clocksources Supported in This Build ==\n\n");
 
-        for (p = clock_pairs; p && p->ref; p++) {
+        for (p = clock_sources; p->major != CPERF_NULL; p++) {
             printf("%-22s\n",
-                    clock_name(p->primary));
+                    clock_name(*p));
         }
         printf("\n");
         return 0;
@@ -669,15 +676,15 @@ int main(int argc, char **argv)
     if (do_drift <= 0 && !do_monitor) {
         printf("== Reported Clock Frequencies ==\n\n");
 
-        for (p = clock_pairs; p && p->ref; p++) {
+        for (p = clock_sources; p->major != CPERF_NULL; p++) {
             uint64_t res;
             char buf[16];
 
-            if (clock_resolution(p->primary, &res) != 0)
+            if (clock_resolution(*p, &res) != 0)
                 continue;
 
             printf("%-22s %s\n",
-                    clock_name(p->primary),
+                    clock_name(*p),
                     pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
         }
         printf("\n\n");
@@ -685,9 +692,9 @@ int main(int argc, char **argv)
         printf("== Clock Behavior Tests ==\n\n");
 
         printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
-        for (p = clock_pairs; p && p->ref; p++) {
-            clock_choose_ref(p->primary);
-            clock_compare(p->primary, *p->ref);
+        for (p = clock_sources; p->major != CPERF_NULL; p++) {
+            clock_choose_ref(*p);
+            clock_compare(*p, ref_clock);
         }
         printf("\n\n");
     }
@@ -695,14 +702,19 @@ int main(int argc, char **argv)
     if (do_drift) {
         printf("== Clock Drift Tests ==\n");
 #ifdef HAVE_DRIFT_TESTS
-        for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+        for (i = 0, p = clock_sources; p->major != CPERF_NULL; i++, p++) {
             if (do_drift > 0 && i != do_drift - 1)
                 continue;
-            clock_choose_ref(p->primary);
+
+            if (ref_index > 0 && do_drift > 0)
+                clock_set_ref(clock_sources[ref_index - 1]);
+            else
+                clock_choose_ref(*p);
+
             printf("\n%9s: %s\n%9s: %s\n",
-                "Primary", clock_name(p->primary),
-                "Reference", clock_name(*p->ref));
-            drift_run(do_drift > 0 ? 60000 : 10000, p->primary, *p->ref);
+                "Primary", clock_name(*p),
+                "Reference", clock_name(ref_clock));
+            drift_run(do_drift > 0 ? 60000 : 10000, *p, ref_clock);
         }
 #else
         printf("error: support for clock drift tests is not compiled in to this build\n");
@@ -718,13 +730,16 @@ int main(int argc, char **argv)
         printf("== Monitoring Raw Clock Values ==\n");
 
         // Read values once to get base values
-        for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
-            if (clock_read(p->primary, &base_values[i]))
+        for (i = 0, p = clock_sources; p->major != CPERF_NULL; i++, p++) {
+            if (clock_read(*p, &base_values[i]))
                 base_values[i] = ~0ULL;
         }
 
         // Choose a wall clock for reference
-        clock_choose_ref_wall();
+        if (ref_index > 0)
+            clock_set_ref(clock_sources[ref_index - 1]);
+        else
+            clock_choose_ref_wall();
 
         clock_read(ref_clock, &wall_time_base);
         do {
@@ -732,11 +747,11 @@ int main(int argc, char **argv)
 
             printf("Elapsed: %" PRIu64" ms\n", (wall_time - wall_time_base) / 1000000);
 
-            for (i = 0, p = clock_pairs; p && p->ref; i++, p++) {
+            for (i = 0, p = clock_sources; p->major != CPERF_NULL; i++, p++) {
                 if (do_monitor > 0 && i != do_monitor - 1)
                     continue;
-                clock_read(p->primary, &current_values[i]);
-                printf("%22s: +%-20" PRIu64 " ms (%-20" PRIu64 " ms)\n", clock_name(p->primary),
+                clock_read(*p, &current_values[i]);
+                printf("%22s: +%-20" PRIu64 " ms (%-20" PRIu64 " ms)\n", clock_name(*p),
                         (current_values[i] - base_values[i]) / 1000000,
                         current_values[i] / 1000000);
             }

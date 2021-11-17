@@ -67,5 +67,8 @@ typedef struct _clock_pair_t {
     || (defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64)
 #  define HAVE_CPU_CLOCK
 #endif
+#if defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
+#  define HAVE_KNOWN_TSC_FREQUENCY
+#endif
 
 /* vim: set ts=4 sts=4 sw=4 et: */

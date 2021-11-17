@@ -20,6 +20,7 @@
 #include "prefix.h"
 #include "clock.h"
 
+#include <assert.h>
 #include <limits.h>
 
 struct clockspec tsc_ref_clock = { CPERF_NONE, 0 };
@@ -182,7 +183,23 @@ static INLINE uint64_t cpu_clock_read(void)
 #endif
 }
 
+
 #elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_ReadStatusReg)
+#ifndef ARM64_CNTVCT
+#define ARM64_CNTVCT ARM64_SYSREG(3, 3, 14, 0, 2)
+#endif
+#ifndef ARM64_CNTFRQ
+#define ARM64_CNTFRQ ARM64_SYSREG(3, 3, 14, 0, 0)
+#endif
+#endif
+
+#ifdef HAVE_KNOWN_TSC_FREQUENCY
+static uint64_t cntfrq_el0;
+#endif
 
 static const char *cpu_clock_name(void)
 {
@@ -191,27 +208,30 @@ static const char *cpu_clock_name(void)
 
 void cpu_clock_init(void)
 {
+#ifdef HAVE_KNOWN_TSC_FREQUENCY
+#ifdef _MSC_VER
+    cntfrq_el0 = _ReadStatusReg(ARM64_CNTFRQ);
+#else
+    unsigned long long cval;
+    asm volatile("mrs %0, cntfrq_el0"
+                 : "=r"(cval));
+    cntfrq_el0 = cval;
+#endif
+    assert(cntfrq_el0 != 0);
+#endif
 }
 
+static INLINE uint64_t cpu_clock_read()
+{
 #ifdef _MSC_VER
-#include <intrin.h>
-#pragma intrinsic(_ReadStatusReg)
-#ifndef ARM64_CNTVCT
-#define ARM64_CNTVCT ARM64_SYSREG(3, 3, 14, 0, 2)
-#endif
-static INLINE uint64_t cpu_clock_read()
-{
     return _ReadStatusReg(ARM64_CNTVCT);
-}
 #else
-static INLINE uint64_t cpu_clock_read()
-{
     unsigned long long cval;
     asm volatile("mrs %0, cntvct_el0"
                  : "=r"(cval));
     return cval;
-}
 #endif
+}
 
 #elif defined(TARGET_CPU_PPC)
 
@@ -303,6 +323,9 @@ static unsigned int max_cycles_shift;
 
 static unsigned long get_cycles_per_msec(void)
 {
+#if defined(HAVE_KNOWN_TSC_FREQUENCY) && defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
+    return cntfrq_el0 / 1000;
+#else
     uint64_t wc_s, wc_e;
     uint64_t c_s, c_e;
     uint64_t elapsed;
@@ -327,6 +350,7 @@ static unsigned long get_cycles_per_msec(void)
     } while (1);
 
     return (c_e - c_s) * 1000000 / elapsed;
+#endif
 }
 
 #ifndef min
@@ -345,59 +369,64 @@ static unsigned long get_cycles_per_msec(void)
     _x > _y ? _x : _y; })
 #endif
 
-void cpu_clock_calibrate(void)
+static void cpu_clock_init_ref(void)
 {
-	double delta, mean, S;
-	uint64_t minc, maxc, avg, cycles[NR_TIME_ITERS];
-	int i, samples, sft = 0;
-	unsigned long long tmp, max_ticks, max_mult;
-
     struct clockspec for_clock = {CPERF_TSC, 0};
     choose_ref_clock(&tsc_ref_clock, ref_clock_choices, for_clock);
+}
 
-	cycles[0] = get_cycles_per_msec();
-	S = delta = mean = 0.0;
-	for (i = 0; i < NR_TIME_ITERS; i++) {
-		cycles[i] = get_cycles_per_msec();
-		delta = cycles[i] - mean;
-		if (delta) {
-			mean += delta / (i + 1.0);
-			S += delta * (cycles[i] - mean);
-		}
-	}
+void cpu_clock_calibrate(void)
+{
+    double delta, mean, S;
+    uint64_t minc, maxc, avg, cycles[NR_TIME_ITERS];
+    int i, samples, sft = 0;
+    unsigned long long tmp, max_ticks, max_mult;
 
-	/*
-	 * The most common platform clock breakage is returning zero
-	 * indefinitely. Check for that and return failure.
-	 */
-	if (!cycles[0] && !cycles[NR_TIME_ITERS - 1]) {
+    cpu_clock_init_ref();
+
+    cycles[0] = get_cycles_per_msec();
+    S = delta = mean = 0.0;
+    for (i = 0; i < NR_TIME_ITERS; i++) {
+        cycles[i] = get_cycles_per_msec();
+        delta = cycles[i] - mean;
+        if (delta) {
+            mean += delta / (i + 1.0);
+            S += delta * (cycles[i] - mean);
+        }
+    }
+
+    /*
+     * The most common platform clock breakage is returning zero
+     * indefinitely. Check for that and return failure.
+     */
+    if (!cycles[0] && !cycles[NR_TIME_ITERS - 1]) {
         fprintf(stderr, "CPU clock calibration failed!\n");
         abort();
     }
 
-	S = sqrt(S / (NR_TIME_ITERS - 1.0));
+    S = sqrt(S / (NR_TIME_ITERS - 1.0));
 
-	minc = ~0ULL;
-	maxc = samples = avg = 0;
-	for (i = 0; i < NR_TIME_ITERS; i++) {
-		double this = cycles[i];
+    minc = ~0ULL;
+    maxc = samples = avg = 0;
+    for (i = 0; i < NR_TIME_ITERS; i++) {
+        double this = cycles[i];
 
-		minc = min(cycles[i], minc);
-		maxc = max(cycles[i], maxc);
+        minc = min(cycles[i], minc);
+        maxc = max(cycles[i], maxc);
 
-		if ((fmax(this, mean) - fmin(this, mean)) > S)
-			continue;
-		samples++;
-		avg += this;
-	}
+        if ((fmax(this, mean) - fmin(this, mean)) > S)
+            continue;
+        samples++;
+        avg += this;
+    }
 
-	S /= (double) NR_TIME_ITERS;
+    S /= (double) NR_TIME_ITERS;
 
-	avg /= samples;
-	cycles_per_msec = avg;
+    avg /= samples;
+    cycles_per_msec = avg;
 
-	max_ticks = MAX_CLOCK_SEC * cycles_per_msec * 1000ULL;
-	max_mult = ULLONG_MAX / max_ticks;
+    max_ticks = MAX_CLOCK_SEC * cycles_per_msec * 1000ULL;
+    max_mult = ULLONG_MAX / max_ticks;
 
     /*
      * Find the largest shift count that will produce
@@ -409,32 +438,32 @@ void cpu_clock_calibrate(void)
             sft++;
     }
 
-	clock_shift = sft;
-	clock_mult = (1ULL << sft) * 1000000 / cycles_per_msec;
+    clock_shift = sft;
+    clock_mult = (1ULL << sft) * 1000000 / cycles_per_msec;
 
-	/*
-	 * Find the greatest power of 2 clock ticks that is less than the
-	 * ticks in MAX_CLOCK_SEC_2STAGE
-	 */
-	max_cycles_shift = max_cycles_mask = 0;
-	tmp = MAX_CLOCK_SEC * 1000ULL * cycles_per_msec;
-	while (tmp > 1) {
-		tmp >>= 1;
-		max_cycles_shift++;
-	}
-	/*
-	 * if use use (1ULL << max_cycles_shift) * 1000 / cycles_per_msec
-	 * here we will have a discontinuity every
-	 * (1ULL << max_cycles_shift) cycles
-	 */
-	nsecs_for_max_cycles = ((1ULL << max_cycles_shift) * clock_mult)
-					>> clock_shift;
+    /*
+     * Find the greatest power of 2 clock ticks that is less than the
+     * ticks in MAX_CLOCK_SEC_2STAGE
+     */
+    max_cycles_shift = max_cycles_mask = 0;
+    tmp = MAX_CLOCK_SEC * 1000ULL * cycles_per_msec;
+    while (tmp > 1) {
+        tmp >>= 1;
+        max_cycles_shift++;
+    }
+    /*
+     * if use use (1ULL << max_cycles_shift) * 1000 / cycles_per_msec
+     * here we will have a discontinuity every
+     * (1ULL << max_cycles_shift) cycles
+     */
+    nsecs_for_max_cycles = ((1ULL << max_cycles_shift) * clock_mult)
+                    >> clock_shift;
 
-	/* Use a bitmask to calculate ticks % (1ULL << max_cycles_shift) */
-	for (tmp = 0; tmp < max_cycles_shift; tmp++)
-		max_cycles_mask |= 1ULL << tmp;
+    /* Use a bitmask to calculate ticks % (1ULL << max_cycles_shift) */
+    for (tmp = 0; tmp < max_cycles_shift; tmp++)
+        max_cycles_mask |= 1ULL << tmp;
 
-	cycles_start = cpu_clock_read();
+    cycles_start = cpu_clock_read();
 }
 #else
 void cpu_clock_calibrate(void)

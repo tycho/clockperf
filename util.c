@@ -20,16 +20,83 @@
 #include "prefix.h"
 #include "util.h"
 
+#ifdef TARGET_OS_WINDOWS
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
+static HANDLE s_timer;
+
+typedef LONG NTSTATUS;
+typedef NTSTATUS (NTAPI *NtSetTimerResolution)(ULONG DesiredResolution, BOOLEAN SetResolution, PULONG CurrentResolution);
+typedef NTSTATUS (NTAPI *NtQueryTimerResolution)(PULONG MinimumResolution, PULONG MaximumResolution, PULONG CurrentResolution);
+#endif
+
 int thread_sleep(unsigned long usec)
 {
-#ifdef TARGET_OS_WINDOWS
-    usec /= 1000;
-    if (usec < 1)
-        usec = 1;
-    Sleep(usec);
+#if defined(TARGET_OS_WINDOWS)
+    if (s_timer) {
+        long long nt_ticks = usec * 10;
+        LARGE_INTEGER li;
+        li.QuadPart = -nt_ticks;
+        if(!SetWaitableTimer(s_timer, &li, 0, NULL, NULL, FALSE)){
+            return 1;
+        }
+        WaitForSingleObject(s_timer, INFINITE);
+    } else {
+        usec /= 1000;
+        if (usec < 1)
+            usec = 1;
+        Sleep(usec);
+    }
     return 0;
 #else
     return usleep(usec);
 #endif
 }
 
+void timers_init(void)
+{
+#ifdef TARGET_OS_WINDOWS
+    NtSetTimerResolution pNtSetTimerResolution;
+    NtQueryTimerResolution pNtQueryTimerResolution;
+
+    HMODULE hNtDll = GetModuleHandleA("ntdll.dll");
+    if (!hNtDll)
+        return;
+
+    pNtSetTimerResolution = (NtSetTimerResolution)GetProcAddress(hNtDll, "NtSetTimerResolution");
+    pNtQueryTimerResolution = (NtQueryTimerResolution)GetProcAddress(hNtDll, "NtQueryTimerResolution");
+    if (pNtSetTimerResolution && pNtQueryTimerResolution)
+    {
+        NTSTATUS result;
+        ULONG ulMinimum = 0, ulMaximum = 0, ulCurrent = 0;
+
+        result = pNtQueryTimerResolution(&ulMinimum, &ulMaximum, &ulCurrent);
+        if (result != ERROR_SUCCESS)
+            return;
+
+        result = pNtSetTimerResolution(ulMaximum, TRUE, &ulCurrent);
+        if (result != ERROR_SUCCESS)
+            return;
+
+        result = pNtQueryTimerResolution(&ulMinimum, &ulMaximum, &ulCurrent);
+        if (result != ERROR_SUCCESS)
+            return;
+    }
+
+    s_timer = CreateWaitableTimerEx(
+            NULL, NULL,
+            CREATE_WAITABLE_TIMER_MANUAL_RESET | CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+            TIMER_ALL_ACCESS);
+#endif
+}
+
+void timers_destroy(void)
+{
+#ifdef TARGET_OS_WINDOWS
+    if (s_timer)
+        CloseHandle(s_timer);
+    s_timer = NULL;
+#endif
+}

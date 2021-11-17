@@ -20,3 +20,6 @@
 #pragma once
 
 int thread_sleep(unsigned long usec);
+
+void timers_init(void);
+void timers_destroy(void);

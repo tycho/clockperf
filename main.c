@@ -642,10 +642,7 @@ int main(int argc, char **argv)
         }
     }
 
-#ifdef TARGET_OS_WINDOWS
-    timeBeginPeriod(1);
-#endif
-
+    timers_init();
     thread_init();
     cpu_clock_init();
     cpu_clock_calibrate();
@@ -750,6 +747,7 @@ int main(int argc, char **argv)
         } while (1);
     }
 
+    timers_destroy();
     return 0;
 }
 

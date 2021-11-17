@@ -547,7 +547,7 @@ static void version(void)
 
 static void usage(const char *argv0)
 {
-    printf("usage: %s [--drift [clocksource] | --list]\n", argv0);
+    printf("usage: %s [--drift [clocksource] | --monitor [clocksource] | --list]\n", argv0);
 }
 
 

@@ -1,7 +1,7 @@
 project('clockperf', 'c',
     default_options: [
         'buildtype=release',
-        'c_std=c99',
+        'c_std=gnu11',
     ]
 )
 

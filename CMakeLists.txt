@@ -30,6 +30,7 @@ endif()
 
 add_executable(clockperf affinity.c clock.c drift.c main.c util.c version.c ${GETOPT_SOURCES} build.h license.h)
 target_link_libraries(clockperf Threads::Threads)
+set_property(TARGET clockperf PROPERTY C_STANDARD 11)
 if (OpenMP_FOUND)
 	target_link_libraries(clockperf OpenMP::OpenMP_C)
 endif()

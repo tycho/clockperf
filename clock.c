@@ -9,6 +9,7 @@
 
 #include "prefix.h"
 #include "clock.h"
+#include "util.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -126,16 +127,9 @@ fail:
     return 1;
 }
 
+static uint32_t cpu_clock_known_freq;
+
 #if defined(TARGET_CPU_X86)
-static const char *cpu_clock_name(void)
-{
-    return "tsc";
-}
-
-void cpu_clock_init(void)
-{
-}
-
 static INLINE uint64_t cpu_clock_read(void)
 {
     uint32_t lo, hi;
@@ -152,15 +146,6 @@ static INLINE uint64_t cpu_clock_read(void)
     return ((uint64_t) hi << 32ULL) | lo;
 }
 #elif defined(TARGET_CPU_X86_64)
-static const char *cpu_clock_name(void)
-{
-    return "tsc";
-}
-
-void cpu_clock_init(void)
-{
-}
-
 static INLINE uint64_t cpu_clock_read(void)
 {
 #ifdef TARGET_COMPILER_MSVC
@@ -172,7 +157,6 @@ static INLINE uint64_t cpu_clock_read(void)
     return ((uint64_t) hi << 32ULL) | lo;
 #endif
 }
-
 
 #elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
 
@@ -187,10 +171,6 @@ static INLINE uint64_t cpu_clock_read(void)
 #endif
 #endif
 
-#ifdef HAVE_KNOWN_TSC_FREQUENCY
-static uint64_t cntfrq_el0;
-#endif
-
 static const char *cpu_clock_name(void)
 {
     return "cntvct";
@@ -198,7 +178,7 @@ static const char *cpu_clock_name(void)
 
 void cpu_clock_init(void)
 {
-#ifdef HAVE_KNOWN_TSC_FREQUENCY
+    uint64_t cntfrq_el0;
 #ifdef _MSC_VER
     cntfrq_el0 = _ReadStatusReg(ARM64_CNTFRQ);
 #else
@@ -207,8 +187,8 @@ void cpu_clock_init(void)
                  : "=r"(cval));
     cntfrq_el0 = cval;
 #endif
-    assert(cntfrq_el0 != 0);
-#endif
+    if (cntfrq_el0)
+        cpu_clock_known_freq = cntfrq_el0 / 1000;
 }
 
 static INLINE uint64_t cpu_clock_read()
@@ -299,6 +279,57 @@ void cpu_clock_init(void)
 }
 #endif
 
+/* Common for x86 32/64-bit */
+#if defined(TARGET_CPU_X86) || defined(TARGET_CPU_X86_64)
+static const char *cpu_clock_name(void)
+{
+    return "tsc";
+}
+
+void cpu_clock_init(void)
+{
+    uint32_t max_leaf;
+    uint32_t regs[4];
+
+    /* Check maximum supported base leaf */
+    memset(regs, 0, sizeof(regs));
+    regs[0] = 0x1;
+    cpuid_read(regs);
+    max_leaf = regs[0];
+
+    if (max_leaf >= 0x15) {
+        uint32_t numer, denom, crystal_khz;
+
+        /* Read TSC information leaf */
+        memset(regs, 0, sizeof(regs));
+        regs[0] = 0x15;
+        cpuid_read(regs);
+
+        denom = regs[0];
+        numer = regs[1];
+        crystal_khz = regs[2];
+
+        if (denom && numer) {
+            if (!crystal_khz && max_leaf >= 0x16) {
+                /* Skylake and Kaby Lake don't set a valid ecx value in leaf
+                 * 0x15, but we can infer it from leaf 0x16 and the ratio in
+                 * leaf 0x15
+                 */
+                memset(regs, 0, sizeof(regs));
+                regs[0] = 0x16;
+                cpuid_read(regs);
+
+                crystal_khz = regs[0] * 1000 * denom / numer;
+            }
+
+            if (crystal_khz) {
+                cpu_clock_known_freq = crystal_khz * numer / denom;
+            }
+        }
+    }
+}
+#endif
+
 #ifdef HAVE_CPU_CLOCK
 
 static unsigned long long cycles_per_msec;
@@ -313,12 +344,15 @@ static unsigned int max_cycles_shift;
 
 static unsigned long get_cycles_per_msec(void)
 {
-#if defined(HAVE_KNOWN_TSC_FREQUENCY) && defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
-    return cntfrq_el0 / 1000;
-#else
     uint64_t wc_s, wc_e;
     uint64_t c_s, c_e;
     uint64_t elapsed;
+
+    /* Early out if we have an already-known CPU frequency and we don't need to
+     * infer it.
+     */
+    if (cpu_clock_known_freq)
+        return cpu_clock_known_freq;
 
     if (clock_read(tsc_ref_clock, &wc_s)) {
         fprintf(stderr, "Reference clock '%s' died while measuring TSC frequency\n",
@@ -340,7 +374,6 @@ static unsigned long get_cycles_per_msec(void)
     } while (1);
 
     return (c_e - c_s) * 1000000 / elapsed;
-#endif
 }
 
 #ifndef min

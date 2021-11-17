@@ -13,3 +13,5 @@ int thread_sleep(unsigned long usec);
 
 void timers_init(void);
 void timers_destroy(void);
+
+int cpuid_read(uint32_t *_regs);

@@ -441,95 +441,6 @@ cleanup:
     free(cost_other);
 }
 
-#if 0
-#if defined(TARGET_CPU_X86_64) || defined(TARGET_CPU_X86)
-static int cpuid(uint32_t *_regs)
-{
-#ifdef TARGET_COMPILER_MSVC
-    __cpuidex(_regs, _regs[0], _regs[2]);
-#else
-#ifdef TARGET_CPU_X86
-    static int cpuid_support = 0;
-    if (!cpuid_support) {
-        uint32_t pre_change, post_change;
-        const uint32_t id_flag = 0x200000;
-        asm ("pushfl\n\t"      /* Save %eflags to restore later.  */
-             "pushfl\n\t"      /* Push second copy, for manipulation.  */
-             "popl %1\n\t"     /* Pop it into post_change.  */
-             "movl %1,%0\n\t"  /* Save copy in pre_change.   */
-             "xorl %2,%1\n\t"  /* Tweak bit in post_change.  */
-             "pushl %1\n\t"    /* Push tweaked copy... */
-             "popfl\n\t"       /* ... and pop it into %eflags.  */
-             "pushfl\n\t"      /* Did it change?  Push new %eflags... */
-             "popl %1\n\t"     /* ... and pop it into post_change.  */
-             "popfl"           /* Restore original value.  */
-             : "=&r" (pre_change), "=&r" (post_change)
-             : "ir" (id_flag));
-        if (((pre_change ^ post_change) & id_flag) == 0)
-            return 1;
-        cpuid_support = 1;
-    }
-#endif
-    asm volatile(
-        "cpuid"
-        : "=a" (_regs[0]),
-          "=b" (_regs[1]),
-          "=c" (_regs[2]),
-          "=d" (_regs[3])
-        : "0" (_regs[0]), "2" (_regs[2]));
-#endif
-    return 0;
-}
-#endif
-
-/*
- * int have_invariant_tsc(void)
- *
- * returns nonzero if CPU has invariant TSC
- */
-static int have_invariant_tsc(void)
-{
-    static int ret = -1;
-
-    if (ret != -1)
-        return ret;
-
-    ret = 0;
-
-#if defined(TARGET_CPU_X86) || defined(TARGET_CPU_X86_64)
-    {
-    uint32_t regs[4];
-    char vendor[13];
-
-    memset(regs, 0, sizeof(regs));
-    if (cpuid(regs)) {
-        /* CPUID couldn't be queried */
-        return ret;
-    }
-    vendor[12] = 0;
-    *(uint32_t *)(&vendor[0]) = regs[1];
-    *(uint32_t *)(&vendor[4]) = regs[3];
-    *(uint32_t *)(&vendor[8]) = regs[2];
-
-    if (!strcmp(vendor, "GenuineIntel") ||
-        !strcmp(vendor, "AuthenticAMD")) {
-        memset(regs, 0, sizeof(regs));
-        regs[0] = 0x80000000;
-        cpuid(regs);
-        if (regs[0] >= 0x80000007) {
-            memset(regs, 0, sizeof(regs));
-            regs[0] = 0x80000007;
-            cpuid(regs);
-            ret = (regs[3] & 0x100) ? 1 : 0;
-        }
-    }
-    }
-#endif
-
-    return ret;
-}
-#endif
-
 static void version(void)
 {
     printf("clockperf v%s\n\n", clockperf_version_long());
@@ -646,10 +557,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_DRIFT_TESTS
     if (do_drift)
         drift_init();
-#endif
-
-#if 0
-    printf("Invariant TSC: %s\n\n", have_invariant_tsc() ? "Yes" : "No");
 #endif
 
     if (do_list) {

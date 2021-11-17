@@ -24,7 +24,7 @@
 #include "util.h"
 #include "version.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
 #endif

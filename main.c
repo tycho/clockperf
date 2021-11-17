@@ -157,7 +157,19 @@ static void calc_error(double *times, uint32_t samples, double *mean, double *er
         case 28:  T = 2.048; break;
         case 29:  T = 2.045; break;
         case 30:  T = 2.042; break;
-        case 190 ... 200: T = 1.960; break;
+        case 190:
+        case 191:
+        case 192:
+        case 193:
+        case 194:
+        case 195:
+        case 196:
+        case 197:
+        case 198:
+        case 199:
+        case 200:
+            T = 1.960;
+            break;
         default:
             printf("Don't know how to deal with statistics for %u samples\n", samples);
             abort();

@@ -688,7 +688,7 @@ void clock_choose_ref(struct clockspec spec)
 
 void clock_choose_ref_wall(void)
 {
-    struct clockspec nullclock = {};
+    struct clockspec nullclock = {0, 0};
     choose_ref_clock(&ref_clock, wall_clock_choices, nullclock);
 }
 

@@ -79,7 +79,9 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
 
     /* Spawn drift thread per CPU */
     #pragma omp parallel
-    {
+	{
+        int i;
+
         #pragma omp master
         {
             struct thread_ctx *thread, *this = NULL;
@@ -158,7 +160,7 @@ void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec ref
         }
 
         #pragma omp for
-        for(uint32_t i = 0; i < thread_count; i++)
+        for(i = 0; i < thread_count; i++)
         {
             uint32_t thread_id = omp_get_thread_num();
             struct thread_ctx *ctx = &threads[thread_id];

@@ -19,7 +19,16 @@ add_custom_command(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/COPYING
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(clockperf affinity.c clock.c drift.c main.c util.c version.c build.h license.h)
+if(MSVC)
+	set(GETOPT_SOURCES getopt/getopt_long.c)
+	set(GETOPT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/getopt)
+
+	# Visual Studio likes to complain about how "snprintf" should be
+	# "_snprintf" or whatever, which would destroy portability for no reason.
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
+endif()
+
+add_executable(clockperf affinity.c clock.c drift.c main.c util.c version.c ${GETOPT_SOURCES} build.h license.h)
 target_link_libraries(clockperf Threads::Threads)
 if (OpenMP_FOUND)
 	target_link_libraries(clockperf OpenMP::OpenMP_C)
@@ -31,6 +40,6 @@ endif()
 if(WIN32 OR CYGWIN OR MINGW)
 	target_link_libraries(clockperf winmm)
 endif()
-target_include_directories(clockperf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(clockperf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${GETOPT_INCLUDE_DIR})
 
 # vim: set ts=4 sts=4 sw=4 noet:

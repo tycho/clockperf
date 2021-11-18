@@ -14,6 +14,10 @@
 #include <assert.h>
 #include <limits.h>
 
+#ifdef TARGET_OS_LINUX
+#include <sched.h>
+#endif
+
 struct clockspec tsc_ref_clock = { CPERF_NONE, 0 };
 struct clockspec ref_clock = { CPERF_NONE, 0 };
 
@@ -404,6 +408,11 @@ void cpu_clock_calibrate(void)
     uint64_t minc, maxc, avg, cycles[NR_TIME_ITERS];
     int i, samples, sft = 0;
     unsigned long long tmp, max_ticks, max_mult;
+
+#ifdef TARGET_OS_LINUX
+    /* Allow the kernel to reschedule us so we get a full time slice */
+    sched_yield();
+#endif
 
     cpu_clock_init_ref();
 

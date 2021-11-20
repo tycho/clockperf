@@ -331,6 +331,17 @@ void cpu_clock_init(void)
             }
         }
     }
+
+#ifdef TARGET_OS_LINUX
+    if (!cpu_clock_known_freq) {
+        FILE *fd = fopen("/sys/devices/system/cpu/tsc_khz", "rt");
+        if (fd) {
+            if (fscanf(fd, "%u", &cpu_clock_known_freq) != 1)
+                cpu_clock_known_freq = 0;
+            fclose(fd);
+        }
+    }
+#endif
 }
 #endif
 

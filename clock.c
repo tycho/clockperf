@@ -133,35 +133,18 @@ fail:
 
 static uint32_t cpu_clock_known_freq;
 
-#if defined(TARGET_CPU_X86)
+#if defined(TARGET_CPU_X86) || defined(TARGET_CPU_X86_64)
+#ifdef TARGET_COMPILER_MSVC
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
+
 static INLINE uint64_t cpu_clock_read(void)
 {
-    uint32_t lo, hi;
-
-#ifdef TARGET_COMPILER_MSVC
-    __asm {
-        rdtsc
-        mov lo, eax
-        mov hi, edx
-    }
-#else
-    __asm__ __volatile__("rdtsc" : "=a" (lo), "=d" (hi));
-#endif
-    return ((uint64_t) hi << 32ULL) | lo;
+    uint32_t aux;
+    return __rdtscp(&aux);
 }
-#elif defined(TARGET_CPU_X86_64)
-static INLINE uint64_t cpu_clock_read(void)
-{
-#ifdef TARGET_COMPILER_MSVC
-    return __rdtsc();
-#else
-    uint32_t lo, hi;
-
-    __asm__ __volatile__("rdtsc" : "=a" (lo), "=d" (hi));
-    return ((uint64_t) hi << 32ULL) | lo;
-#endif
-}
-
 #elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
 
 #ifdef _MSC_VER

@@ -71,7 +71,7 @@ CFLAGS := \
 	-Wno-deprecated-declarations
 
 LDFLAGS := -lm
-OBJECTS := affinity.o clock.o drift.o main.o util.o version.o
+OBJECTS := affinity.o clock.o drift.o main.o util.o winapi.o version.o
 
 ifdef NO_GNU_GETOPT
 CFLAGS += -Igetopt

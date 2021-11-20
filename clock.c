@@ -10,6 +10,7 @@
 #include "prefix.h"
 #include "clock.h"
 #include "util.h"
+#include "winapi.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -36,9 +37,7 @@ static struct clockspec ref_clock_choices[] = {
 #endif
 #endif
 #ifdef TARGET_OS_WINDOWS
-#if _WIN32_WINNT >= 0x0602
     {CPERF_GETSYSTIMEPRECISE, 0},
-#endif
     {CPERF_QUERYPERFCOUNTER, 0},
 #endif
 #ifdef HAVE_CLOCK_GETTIME
@@ -610,20 +609,29 @@ int clock_read(struct clockspec spec, uint64_t *output)
                 *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
             }
             break;
-#if _WIN32_WINNT >= 0x0602
         case CPERF_GETSYSTIMEPRECISE:
             {
                 FILETIME ft;
-                GetSystemTimePreciseAsFileTime(&ft);
+                if (!pGetSystemTimePreciseAsFileTime)
+                    return 1;
+                pGetSystemTimePreciseAsFileTime(&ft);
                 *output = ((uint64_t)ft.dwLowDateTime | ((uint64_t)ft.dwHighDateTime << 32)) * 100ULL;
             }
             break;
-#endif
         case CPERF_UNBIASEDINTTIME:
             {
                 ULONGLONG t;
-                if (!QueryUnbiasedInterruptTime(&t))
+                if (!pQueryUnbiasedInterruptTime || !pQueryUnbiasedInterruptTime(&t))
                     return 1;
+                *output = t * 100ULL;
+            }
+            break;
+        case CPERF_UNBIASEDINTTIMEPRECISE:
+            {
+                ULONGLONG t;
+                if (!pQueryUnbiasedInterruptTimePrecise)
+                    return 1;
+                pQueryUnbiasedInterruptTime(&t);
                 *output = t * 100ULL;
             }
             break;
@@ -730,6 +738,8 @@ const char *clock_name(struct clockspec spec)
         return "SysTimePrecAsFile";
     case CPERF_UNBIASEDINTTIME:
         return "UnbiasIntTime";
+    case CPERF_UNBIASEDINTTIMEPRECISE:
+        return "UnbiasIntTimePrec";
 #endif
     default:
         return "unknown";
@@ -833,9 +843,26 @@ int clock_resolution(const struct clockspec spec, uint64_t *output)
         case CPERF_TIMEGETTIME:
             hz = 1000ULL;
             break;
-        case CPERF_UNBIASEDINTTIME:
         case CPERF_GETSYSTIME:
+            /* NT timer ticks (100ns) */
+            hz = 10000000ULL;
+            break;
         case CPERF_GETSYSTIMEPRECISE:
+            if (!pGetSystemTimePreciseAsFileTime)
+                return 1;
+            /* NT timer ticks (100ns) */
+            hz = 10000000ULL;
+            break;
+        case CPERF_UNBIASEDINTTIME:
+            if (!pQueryUnbiasedInterruptTime)
+                return 1;
+            /* NT timer ticks (100ns) */
+            hz = 10000000ULL;
+            break;
+        case CPERF_UNBIASEDINTTIMEPRECISE:
+            if (!pQueryUnbiasedInterruptTimePrecise)
+                return 1;
+            /* NT timer ticks (100ns) */
             hz = 10000000ULL;
             break;
 #endif

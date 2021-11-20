@@ -9,6 +9,7 @@
 
 #include "prefix.h"
 #include "util.h"
+#include "winapi.h"
 
 #ifdef TARGET_COMPILER_VC
 #if defined(TARGET_CPU_X86_64) || defined(TARGET_CPU_X86)
@@ -22,10 +23,6 @@
 #endif
 
 static HANDLE s_timer;
-
-typedef LONG NTSTATUS;
-typedef NTSTATUS (NTAPI *NtSetTimerResolution)(ULONG DesiredResolution, BOOLEAN SetResolution, PULONG CurrentResolution);
-typedef NTSTATUS (NTAPI *NtQueryTimerResolution)(PULONG MinimumResolution, PULONG MaximumResolution, PULONG CurrentResolution);
 #endif
 
 int thread_sleep(unsigned long usec)
@@ -54,15 +51,6 @@ int thread_sleep(unsigned long usec)
 void timers_init(void)
 {
 #ifdef TARGET_OS_WINDOWS
-    NtSetTimerResolution pNtSetTimerResolution;
-    NtQueryTimerResolution pNtQueryTimerResolution;
-
-    HMODULE hNtDll = GetModuleHandleA("ntdll.dll");
-    if (!hNtDll)
-        return;
-
-    pNtSetTimerResolution = (NtSetTimerResolution)GetProcAddress(hNtDll, "NtSetTimerResolution");
-    pNtQueryTimerResolution = (NtQueryTimerResolution)GetProcAddress(hNtDll, "NtQueryTimerResolution");
     if (pNtSetTimerResolution && pNtQueryTimerResolution)
     {
         NTSTATUS result;

@@ -12,6 +12,7 @@
 #include "clock.h"
 #include "drift.h"
 #include "util.h"
+#include "winapi.h"
 #include "version.h"
 
 #ifdef _MSC_VER
@@ -90,10 +91,9 @@ static struct clockspec clock_sources[] = {
     {CPERF_GETTICKCOUNT64, 0},
     {CPERF_TIMEGETTIME, 0},
     {CPERF_GETSYSTIME, 0},
-#if _WIN32_WINNT >= 0x0602
     {CPERF_GETSYSTIMEPRECISE, 0},
-#endif
     {CPERF_UNBIASEDINTTIME, 0},
+    {CPERF_UNBIASEDINTTIMEPRECISE, 0},
 #endif
     {CPERF_NULL, 0},
 };
@@ -550,6 +550,7 @@ int main(int argc, char **argv)
         }
     }
 
+    winapi_init();
     timers_init();
     thread_init();
     cpu_clock_init();
@@ -590,6 +591,9 @@ int main(int argc, char **argv)
 
         printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
         for (p = clock_sources; p->major != CPERF_NULL; p++) {
+            uint64_t res;
+            if (clock_resolution(*p, &res) != 0)
+                continue;
             clock_choose_ref(*p);
             clock_compare(*p, ref_clock);
         }

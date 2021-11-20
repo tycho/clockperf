@@ -18,7 +18,7 @@ gen_license_h = custom_target('license.h',
                               output : ['license.h'],
                               command : [meson.current_source_dir() + '/tools/license.pl', '@INPUT@', '@OUTPUT@'])
 
-src = ['affinity.c', 'clock.c', 'drift.c', 'main.c', 'util.c', 'version.c']
+src = ['affinity.c', 'clock.c', 'drift.c', 'main.c', 'util.c', 'winapi.c', 'version.c']
 
 incdirs = include_directories('.')
 lm = compiler.find_library('m')

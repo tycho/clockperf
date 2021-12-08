@@ -279,7 +279,6 @@ void cpu_clock_init(void)
 
     /* Check maximum supported base leaf */
     memset(regs, 0, sizeof(regs));
-    regs[0] = 0x1;
     cpuid_read(regs);
     max_leaf = regs[0];
 

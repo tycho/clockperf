@@ -86,9 +86,11 @@ static struct clockspec clock_sources[] = {
 #ifdef HAVE_FTIME
     {CPERF_FTIME, 0},
 #endif
+#ifdef ALLOW_LOWRES_CLOCKS
 #ifdef HAVE_TIME
     {CPERF_TIME, 0},
 #endif
+#endif // ALLOW_LOWRES_CLOCKS
 #ifdef TARGET_OS_WINDOWS
     {CPERF_QUERYPERFCOUNTER, 0},
     {CPERF_GETTICKCOUNT, 0},

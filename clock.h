@@ -60,4 +60,9 @@ void cpu_clock_calibrate(void);
 #define ALLOW_RUSAGE_CLOCKS
 #endif
 
+#if 0
+/* Allow clocks which have worse resolution than 1ms? */
+#define ALLOW_LOWRES_CLOCKS
+#endif
+
 /* vim: set ts=4 sts=4 sw=4 et: */

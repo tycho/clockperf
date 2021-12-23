@@ -594,8 +594,8 @@ int main(int argc, char **argv)
 
         printf("Name                Cost(ns)      +/-    Resol  Mono  Fail  Warp  Stal  Regr\n");
         for (p = clock_sources; p->major != CPERF_NULL; p++) {
-            uint64_t res;
-            if (clock_resolution(*p, &res) != 0)
+            uint64_t read;
+            if (clock_read(*p, &read) != 0)
                 continue;
             clock_choose_ref(*p);
             clock_compare(*p, ref_clock);

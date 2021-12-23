@@ -545,16 +545,6 @@ int clock_read(struct clockspec spec, uint64_t *output)
             }
             break;
 #endif
-#ifdef HAVE_FTIME
-        case CPERF_FTIME:
-            {
-                struct timeb time;
-                if (ftime(&time))
-                    return 1;
-                *output = (time.time * 1000000000ULL) + (time.millitm * 1000000ULL);
-            }
-            break;
-#endif
 #ifdef HAVE_TIME
         case CPERF_TIME:
             {
@@ -703,10 +693,6 @@ const char *clock_name(struct clockspec spec)
     case CPERF_RUSAGE:
         return "getrusage";
 #endif
-#ifdef HAVE_FTIME
-    case CPERF_FTIME:
-        return "ftime";
-#endif
 #ifdef HAVE_TIME
     case CPERF_TIME:
         return "time";
@@ -798,11 +784,6 @@ int clock_resolution(const struct clockspec spec, uint64_t *output)
              * there is no clearly defined way to determine that update
              * frequency. Best to just error out and say we can't discover it.
              */
-            return 1;
-            break;
-#endif
-#ifdef HAVE_FTIME
-        case CPERF_FTIME:
             return 1;
             break;
 #endif

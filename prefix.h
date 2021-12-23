@@ -52,8 +52,6 @@
 #endif
 
 #ifndef TARGET_OS_WINDOWS
-/* On Cygwin/MinGW, ftime has a void return, so we can't use it. */
-#define HAVE_FTIME
 #define HAVE_CLOCK
 #endif
 

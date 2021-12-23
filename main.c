@@ -83,9 +83,6 @@ static struct clockspec clock_sources[] = {
     {CPERF_RUSAGE, 0},
 #endif
 #endif // ALLOW_RUSAGE_CLOCKS
-#ifdef HAVE_FTIME
-    {CPERF_FTIME, 0},
-#endif
 #ifdef ALLOW_LOWRES_CLOCKS
 #ifdef HAVE_TIME
     {CPERF_TIME, 0},

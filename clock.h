@@ -55,4 +55,9 @@ void cpu_clock_calibrate(void);
 #  define HAVE_CPU_CLOCK
 #endif
 
+#if 0
+/* Allow clocks which represent CPU time used by the thread/process? */
+#define ALLOW_RUSAGE_CLOCKS
+#endif
+
 /* vim: set ts=4 sts=4 sw=4 et: */

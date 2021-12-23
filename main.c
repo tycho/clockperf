@@ -66,19 +66,23 @@ static struct clockspec clock_sources[] = {
 #ifdef CLOCK_UPTIME_RAW_APPROX // OS X
     {CPERF_GETTIME, CLOCK_UPTIME_RAW_APPROX},
 #endif
+#ifdef ALLOW_RUSAGE_CLOCKS
 #ifdef CLOCK_PROCESS_CPUTIME_ID
     {CPERF_GETTIME, CLOCK_PROCESS_CPUTIME_ID},
 #endif
 #ifdef CLOCK_THREAD_CPUTIME_ID
     {CPERF_GETTIME, CLOCK_THREAD_CPUTIME_ID},
 #endif
-#endif
+#endif // ALLOW_RUSAGE_CLOCKS
+#endif // HAVE_CLOCK_GETTIME
+#ifdef ALLOW_RUSAGE_CLOCKS
 #ifdef HAVE_CLOCK
     {CPERF_CLOCK, 0},
 #endif
 #ifdef HAVE_GETRUSAGE
     {CPERF_RUSAGE, 0},
 #endif
+#endif // ALLOW_RUSAGE_CLOCKS
 #ifdef HAVE_FTIME
     {CPERF_FTIME, 0},
 #endif

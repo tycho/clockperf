@@ -766,7 +766,7 @@ int clock_resolution(const struct clockspec spec, uint64_t *output)
 #endif
 #ifdef HAVE_GETTIMEOFDAY
         case CPERF_GTOD:
-            return 1;
+            hz = 1000000ULL;
             break;
 #endif
 #ifdef HAVE_CPU_CLOCK

@@ -409,7 +409,7 @@ void cpu_clock_calibrate(void)
     minc = ~0ULL;
     maxc = samples = avg = 0;
     for (i = 0; i < NR_TIME_ITERS; i++) {
-        double this = cycles[i];
+        double this = (double)(cycles[i]);
 
         minc = min(cycles[i], minc);
         maxc = max(cycles[i], maxc);
@@ -417,7 +417,7 @@ void cpu_clock_calibrate(void)
         if ((fmax(this, mean) - fmin(this, mean)) > S)
             continue;
         samples++;
-        avg += this;
+        avg += cycles[i];
     }
 
     S /= (double) NR_TIME_ITERS;

@@ -320,7 +320,7 @@ baseline:
     /*
      * Clamp to either 30 or 200.
      */
-    samples = fmax(30.0, 1e6 / observed_res);
+    samples = (uint32_t)fmax(30.0, 1e6 / observed_res);
     if (samples > 200)
         samples = 200;
     else if (samples > 30)
@@ -685,7 +685,7 @@ int main(int argc, char **argv)
 
             printf("%-22s %s\n",
                     clock_name(*p),
-                    pretty_print(buf, sizeof(buf), res, rate_suffixes, 10));
+                    pretty_print(buf, sizeof(buf), (double)res, rate_suffixes, 10));
         }
         printf("\n\n");
 

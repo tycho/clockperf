@@ -20,8 +20,19 @@ gen_license_h = custom_target('license.h',
 
 src = ['affinity.c', 'clock.c', 'drift.c', 'main.c', 'util.c', 'version.c']
 
-incdirs = include_directories('.')
-lm = compiler.find_library('m')
+system_deps = []
+incdir_paths = ['.']
+
+if compiler.get_id() == 'msvc'
+    src += ['getopt/getopt_long.c']
+    incdir_paths += ['getopt']
+    system_deps += [compiler.find_library('winmm')]
+else
+    system_deps += [compiler.find_library('m')]
+endif
+
+incdirs = include_directories(incdir_paths)
+
 threads = dependency('threads')
 openmp = dependency('openmp', required: false)
 
@@ -32,6 +43,6 @@ executable('clockperf',
            gen_build_h,
            gen_license_h,
            include_directories : incdirs,
-           dependencies : [lm, threads, openmp])
+           dependencies : system_deps + [threads, openmp])
 
 # vim: set ts=4 sts=4 sw=4 et:

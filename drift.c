@@ -19,6 +19,10 @@
 #include <stdbool.h>
 #include <omp.h>
 
+#if defined(TARGET_COMPILER_CLANG) && defined(TARGET_COMPILER_MSVC)
+#pragma comment (lib, "libomp")
+#endif
+
 struct global_cfg {
     struct clockspec clk;
     struct clockspec ref;

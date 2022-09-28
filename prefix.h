@@ -31,7 +31,9 @@
 #define snprintf _snprintf
 #define inline __inline
 #include <float.h>
+#ifndef __FLT_EPSILON__
 #define __FLT_EPSILON__ FLT_EPSILON
+#endif
 #else
 #define HAVE_GETTIMEOFDAY
 #include <sys/time.h>
@@ -83,7 +85,7 @@
 #include <sys/wait.h>
 #endif
 
-#ifdef TARGET_COMPILER_GCC
+#if defined(TARGET_COMPILER_GCC) || defined(TARGET_COMPILER_CLANG)
 #define INLINE __attribute__((always_inline)) inline
 #define UNUSED __attribute__((unused))
 #else

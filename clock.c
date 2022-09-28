@@ -258,6 +258,49 @@ void cpu_clock_init(void)
 }
 #endif
 
+#if defined(TARGET_OS_WINDOWS)
+static INLINE int64_t clock_scale_generic(int64_t _freq, int64_t _ctr, int64_t _period_den)
+{
+	// Instead of just having "(_ctr * _period_den) / _freq",
+	// the algorithm below prevents overflow when _ctr is sufficiently large.
+	// It assumes that _freq * _period_den does not overflow, which is currently true for nano period.
+	// It is not realistic for _ctr to accumulate to large values from zero with this assumption,
+	// but the initial value of _ctr could be large.
+
+	const int64_t whole = (_ctr / _freq) * _period_den;
+	const int64_t part = (_ctr % _freq) * _period_den / _freq;
+	return whole + part;
+}
+
+// Specialization: if the frequency value is 10MHz (common for
+// QueryPerformanceFrequency on x86/x64), we use this function instead, because
+// the compiler will change the frequency divisions into shifts and multiplies.
+static INLINE int64_t clock_scale_10MHz(int64_t _ctr, int64_t _period_den)
+{
+	const int64_t _freq = 10000000LL;
+	return clock_scale_generic(_freq, _ctr, _period_den);
+}
+
+// Specialization: if the frequency value is 24MHz (common for
+// QueryPerformanceFrequency on ARM64), we use this function instead, because
+// the compiler will change the frequency divisions into shifts and multiplies.
+static INLINE int64_t clock_scale_24MHz(int64_t _ctr, int64_t _period_den)
+{
+	const int64_t _freq = 24000000LL;
+	return clock_scale_generic(_freq, _ctr, _period_den);
+}
+
+static int64_t clock_scale_dispatch(int64_t _freq, int64_t _ctr, int64_t _period_den)
+{
+	switch (_freq) {
+	case 10000000LL: return clock_scale_10MHz(_ctr, _period_den); break;
+	case 24000000LL: return clock_scale_24MHz(_ctr, _period_den); break;
+	}
+	return clock_scale_generic(_freq, _ctr, _period_den);
+}
+#endif
+
+
 /* Common for x86 32/64-bit */
 #if defined(TARGET_CPU_X86) || defined(TARGET_CPU_X86_64)
 static const char *cpu_clock_name(void)
@@ -572,7 +615,7 @@ int clock_read(struct clockspec spec, uint64_t *output)
                 }
                 if (!QueryPerformanceCounter(&qpc))
                     return 1;
-                *output = qpc.QuadPart * 1000000000ULL / qpc_freq.QuadPart;
+                *output = clock_scale_dispatch(qpc_freq.QuadPart, qpc.QuadPart, 1000000000LL);
             }
             break;
         case CPERF_GETTICKCOUNT:

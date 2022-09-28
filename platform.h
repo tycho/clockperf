@@ -134,6 +134,9 @@
 #    define TARGET_OS_WINDOWS
 #    define OS_DETECTED
 #  endif
+#  if defined(__clang__)
+#    define TARGET_COMPILER_CLANG
+#  endif
 #  if defined (__MINGW32__)
 #    define TARGET_COMPILER_MINGW
 #  endif

@@ -18,3 +18,5 @@
 
 void drift_init(void);
 void drift_run(uint32_t runtime_ms, struct clockspec clkid, struct clockspec refid);
+
+/* vim: set ts=4 sts=4 sw=4 et: */

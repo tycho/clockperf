@@ -3,7 +3,7 @@
 /*
  * clockperf
  *
- * Copyright (c) 2016-2021, Steven Noonan <steven@uplinklabs.net>
+ * Copyright (c) 2016-2023, Steven Noonan <steven@uplinklabs.net>
  *
  */
 

@@ -9,6 +9,7 @@
 
 #include "prefix.h"
 #include "clock.h"
+#include "tscemu.h"
 #include "util.h"
 #include "winapi.h"
 
@@ -18,6 +19,8 @@
 #ifdef TARGET_OS_LINUX
 #include <sched.h>
 #endif
+
+extern int do_emulate_tsc;
 
 struct clockspec tsc_ref_clock = { CPERF_NONE, 0 };
 struct clockspec ref_clock = { CPERF_NONE, 0 };
@@ -135,7 +138,13 @@ static uint32_t cpu_clock_known_freq;
 static INLINE uint64_t cpu_clock_read(void)
 {
     uint32_t aux;
-    return __rdtscp(&aux);
+    uint64_t rv;
+    if (do_emulate_tsc)
+        tscemu_enable();
+    rv = __rdtscp(&aux);
+    if (do_emulate_tsc)
+        tscemu_disable();
+    return rv;
 }
 #elif defined(TARGET_CPU_ARM) && TARGET_CPU_BITS == 64
 

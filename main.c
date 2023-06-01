@@ -477,6 +477,7 @@ static void usage(const char *argv0)
 static int do_drift;
 static int do_monitor;
 static int do_list;
+int do_emulate_tsc;
 static int ref_index;
 
 int main(int argc, char **argv)
@@ -494,11 +495,12 @@ int main(int argc, char **argv)
             {"monitor", optional_argument, 0, 'm'},
             {"ref", optional_argument, 0, 'r'},
             {"list", optional_argument, 0, 'l'},
+            {"emulate-tsc", no_argument, 0, 'e'},
             {0, 0, 0, 0}
         };
         int c, option_index = 0;
 
-        c = getopt_long(argc, argv, "vhr:m:d:l", long_options, &option_index);
+        c = getopt_long(argc, argv, "vhr:m:d:le", long_options, &option_index);
         if (c == -1)
             break;
         switch (c) {
@@ -537,6 +539,9 @@ int main(int argc, char **argv)
                 else if (c == 'r')
                     ref_index = v;
             }
+            break;
+        case 'e':
+            do_emulate_tsc = 1;
             break;
         case 'l':
             do_list = 1;

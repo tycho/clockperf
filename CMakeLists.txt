@@ -28,7 +28,7 @@ if(MSVC)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif()
 
-add_executable(clockperf affinity.c clock.c drift.c main.c util.c winapi.c version.c ${GETOPT_SOURCES} build.h license.h)
+add_executable(clockperf affinity.c clock.c drift.c main.c tscemu.c util.c winapi.c version.c ${GETOPT_SOURCES} build.h license.h)
 target_link_libraries(clockperf Threads::Threads)
 set_property(TARGET clockperf PROPERTY C_STANDARD 11)
 if (OpenMP_FOUND)

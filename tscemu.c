@@ -125,7 +125,7 @@ static void tsc_handler(int sig, siginfo_t *si, void *context)
     abort();
 }
 
-static void tsc_handler_install(void)
+static int tsc_handler_install(void)
 {
     struct sigaction action;
     int rv;
@@ -134,9 +134,10 @@ static void tsc_handler_install(void)
     action.sa_sigaction = tsc_handler;
     rv = sigaction(SIGSEGV, &action, NULL);
     assert(rv == 0);
+    return (rv == 0) ? 0 : 1;
 }
 
-static void tsc_handler_remove(void)
+static int tsc_handler_remove(void)
 {
     struct sigaction action;
     int rv;
@@ -144,12 +145,22 @@ static void tsc_handler_remove(void)
     action.sa_sigaction = (void*)SIG_DFL;
     rv = sigaction(SIGSEGV, &action, NULL);
     assert(rv == 0);
+    return (rv == 0) ? 0 : 1;
+}
+
+int tscemu_init(void)
+{
+    return tsc_handler_install();
+}
+
+int tscemu_destroy(void)
+{
+    return tsc_handler_remove();
 }
 
 int tscemu_enable(void)
 {
     int rv;
-    tsc_handler_install();
     rv = prctl(PR_SET_TSC, PR_TSC_SIGSEGV, 0, 0, 0);
     assert(rv == 0);
     return rv == 0 ? 0 : 1;
@@ -159,22 +170,33 @@ int tscemu_disable(void)
 {
     int rv;
     rv = prctl(PR_SET_TSC, PR_TSC_ENABLE, 0, 0, 0);
-    tsc_handler_remove();
     assert(rv == 0);
     return rv == 0 ? 0 : 1;
 }
 
 #else
 
+//
+// Only supported on Linux for now
+//
+
+int tscemu_init(void)
+{
+    return 1;
+}
+
+int tscemu_destroy(void)
+{
+    return 1;
+}
+
 int tscemu_enable(void)
 {
-    // Only supported on Linux for now
     return 1;
 }
 
 int tscemu_disable(void)
 {
-    // Only supported on Linux for now
     return 1;
 }
 

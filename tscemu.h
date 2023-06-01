@@ -12,4 +12,7 @@
 int tscemu_enable(void);
 int tscemu_disable(void);
 
+int tscemu_init(void);
+int tscemu_destroy(void);
+
 /* vim: set ts=4 sts=4 sw=4 et: */

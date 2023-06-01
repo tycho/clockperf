@@ -11,6 +11,7 @@
 #include "affinity.h"
 #include "clock.h"
 #include "drift.h"
+#include "tscemu.h"
 #include "util.h"
 #include "winapi.h"
 #include "version.h"
@@ -558,6 +559,9 @@ int main(int argc, char **argv)
         }
     }
 
+    if (do_emulate_tsc)
+        tscemu_init();
+
     winapi_init();
     timers_init();
     thread_init();
@@ -672,6 +676,10 @@ int main(int argc, char **argv)
     }
 
     timers_destroy();
+
+    if (do_emulate_tsc)
+        tscemu_destroy();
+
     return 0;
 }
 

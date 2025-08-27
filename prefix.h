@@ -41,7 +41,9 @@
 #define snprintf _snprintf
 #define inline __inline
 #include <float.h>
+#ifndef __FLT_EPSILON__
 #define __FLT_EPSILON__ FLT_EPSILON
+#endif
 #else
 #define HAVE_GETTIMEOFDAY
 #include <sys/time.h>

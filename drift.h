@@ -22,7 +22,7 @@
 #include "platform.h"
 #include "clock.h"
 
-#ifdef _OPENMP
+#if defined(_OPENMP) && !defined(TARGET_OS_OPENBSD)
 #define HAVE_DRIFT_TESTS
 #endif
 

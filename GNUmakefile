@@ -45,10 +45,18 @@ endif
 CC := gcc
 CP := cp -L
 
+ifeq ($(uname_S),OpenBSD)
+CC := clang
+endif
+
 COMPILER_ACCEPTS_OPENMP := $(shell $(CC) -c -fopenmp -xc /dev/null -o /dev/null &>/dev/null && echo yes || echo no)
 
 ifeq ($(COMPILER_ACCEPTS_OPENMP),yes)
-    OPENMP_ARG := -fopenmp
+OPENMP_ARG := -fopenmp
+endif
+
+ifeq ($(uname_S),OpenBSD)
+OPENMP_ARG :=
 endif
 
 CFLAGS := \

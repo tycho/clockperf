@@ -69,7 +69,11 @@
 #define HAVE_CLOCK
 #endif
 
+#if defined(TARGET_OS_OPENBSD)
+#undef HAVE_FTIME
+#else
 #include <sys/timeb.h>
+#endif
 
 #ifdef TARGET_OS_MACOSX
 #include <mach/mach_time.h>
@@ -77,7 +81,7 @@
 #endif
 
 #ifdef _POSIX_TIMERS
-#if _POSIX_TIMERS > 0 && !defined(TARGET_COMPILER_MINGW)
+#if !defined(TARGET_COMPILER_MINGW)
 #define HAVE_CLOCK_GETTIME
 #endif
 #endif

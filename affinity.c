@@ -56,13 +56,6 @@
 
 #include <sys/sysctl.h>
 
-/*#define USE_CHUD*/
-#ifdef USE_CHUD
-extern int chudProcessorCount(void);
-extern int utilBindThreadToCPU(int n);
-extern int utilUnbindThreadFromCPU(void);
-#endif
-
 #endif
 
 #ifdef TARGET_OS_WINDOWS
@@ -198,16 +191,13 @@ int thread_bind(uint32_t id)
     }
 
     return 0;
-#elif defined(TARGET_OS_MACOSX)
-    int ret = 1;
 
-#ifdef USE_CHUD
-    ret = (utilBindThreadToCPU(id) == 0) ? 0 : 1;
-#else
-#warning "thread_bind() not implementable on macOS"
-#endif
+#elif defined(TARGET_OS_MACOSX) || defined(TARGET_OS_OPENBSD)
+#warning "thread_bind() not implementable on this platform"
 
-    return ret == 0 ? 0 : 1;
+	(void)id;
+
+    return 1;
 #else
 #error "thread_bind() not defined for this platform"
 #endif

@@ -221,7 +221,7 @@ void cpu_clock_init(void)
 #endif
 }
 
-static INLINE uint64_t cpu_clock_read()
+static INLINE uint64_t cpu_clock_read(void)
 {
 #ifdef _MSC_VER
     return _ReadStatusReg(ARM64_CNTVCT);

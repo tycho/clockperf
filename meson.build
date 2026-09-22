@@ -37,6 +37,7 @@ threads = dependency('threads')
 openmp = dependency('openmp', required: false)
 
 add_project_arguments(compiler.first_supported_argument('-Wno-deprecated-declarations'), language: 'c')
+add_project_arguments(compiler.first_supported_argument('-Wno-deprecated-openmp'), language: 'c')
 
 executable('clockperf',
            src,

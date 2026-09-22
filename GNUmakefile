@@ -76,7 +76,8 @@ CFLAGS := \
 	-Wno-overlength-strings \
 	-Wold-style-definition \
 	-Wstrict-prototypes \
-	-Wno-deprecated-declarations
+	-Wno-deprecated-declarations \
+	-Wno-deprecated-openmp
 
 LDFLAGS := -lm
 OBJECTS := affinity.o clock.o drift.o main.o util.o version.o

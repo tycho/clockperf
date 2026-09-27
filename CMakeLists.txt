@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
-# At time of writing, Cygwin has 3.6, MinGW has 3.12
+cmake_minimum_required(VERSION 3.28)
 
 project(clockperf C)
 

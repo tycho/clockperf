@@ -8,6 +8,25 @@ find_package(Threads REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+include(CheckCCompilerFlag)
+
+# Append -Wno-<name> to the list variable <out> if the compiler knows about the
+# warning -W<name>. The positive form is what gets probed, because compilers
+# commonly accept -Wno-whatever for warnings they have never heard of (GCC only
+# mentions such a flag if some other diagnostic happens to fire later on).
+function(check_disable_warning _out _name)
+	string(MAKE_C_IDENTIFIER "HAVE_W_${_name}" _have_var)
+	# Some compilers merely warn about flags they don't understand, so -Werror
+	# is needed to turn that diagnostic into a hard failure.
+	set(CMAKE_REQUIRED_FLAGS -Werror)
+	check_c_compiler_flag(-W${_name} ${_have_var})
+	if(${_have_var})
+		set(_flags ${${_out}})
+		list(APPEND _flags -Wno-${_name})
+		set(${_out} ${_flags} PARENT_SCOPE)
+	endif()
+endfunction()
+
 add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/build.h
 	COMMAND perl tools/build.pl ${CMAKE_CURRENT_BINARY_DIR}/build.h
@@ -35,7 +54,9 @@ if (OpenMP_FOUND)
 endif()
 if(NOT MSVC)
 	target_link_libraries(clockperf m)
-	target_compile_options(clockperf PRIVATE -Wno-deprecated-declarations -Wno-deprecated-openmp)
+	set(WARNING_FLAGS -Wno-deprecated-declarations)
+	check_disable_warning(WARNING_FLAGS deprecated-openmp)
+	target_compile_options(clockperf PRIVATE ${WARNING_FLAGS})
 endif()
 if(WIN32 OR CYGWIN OR MINGW)
 	target_link_libraries(clockperf winmm)

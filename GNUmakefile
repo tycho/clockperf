@@ -49,11 +49,22 @@ ifeq ($(uname_S),OpenBSD)
 CC := clang
 endif
 
-COMPILER_ACCEPTS_OPENMP := $(shell $(CC) -c -fopenmp -xc /dev/null -o /dev/null &>/dev/null && echo yes || echo no)
+# Expand to $(1) if $(CC) accepts it, and to nothing otherwise. Some compilers
+# only warn about command line flags they don't understand, so -Werror is needed
+# to turn that diagnostic into a non-zero exit status.
+#
+#   CFLAGS += $(call cc-option,-fsomething)
+cc-option = $(shell $(CC) $(1) -Werror -c -xc /dev/null -o /dev/null >/dev/null 2>&1 && echo '$(1)')
 
-ifeq ($(COMPILER_ACCEPTS_OPENMP),yes)
-OPENMP_ARG := -fopenmp
-endif
+# Expand to -Wno-$(1) if $(CC) knows about the warning -W$(1), and to nothing
+# otherwise. The positive form is what gets probed, because compilers commonly
+# accept -Wno-whatever for warnings they've never heard of (GCC only mentions
+# such a flag if some other diagnostic happens to fire later in the build).
+#
+#   CFLAGS += $(call cc-disable-warning,deprecated-openmp)
+cc-disable-warning = $(if $(call cc-option,-W$(1)),-Wno-$(1))
+
+OPENMP_ARG := $(call cc-option,-fopenmp)
 
 ifeq ($(uname_S),OpenBSD)
 OPENMP_ARG :=
@@ -77,7 +88,7 @@ CFLAGS := \
 	-Wold-style-definition \
 	-Wstrict-prototypes \
 	-Wno-deprecated-declarations \
-	-Wno-deprecated-openmp
+	$(call cc-disable-warning,deprecated-openmp)
 
 LDFLAGS := -lm
 OBJECTS := affinity.o clock.o drift.o main.o util.o version.o

@@ -213,8 +213,9 @@ void cpu_clock_init(void)
     cntfrq_el0 = _ReadStatusReg(ARM64_CNTFRQ);
 #else
     unsigned long long cval;
-    asm volatile("mrs %0, cntfrq_el0"
-                 : "=r"(cval));
+    __asm__ __volatile__(
+        "mrs %0, cntfrq_el0"
+        : "=r"(cval));
     cntfrq_el0 = cval;
 #endif
     assert(cntfrq_el0 != 0);
@@ -227,8 +228,9 @@ static INLINE uint64_t cpu_clock_read(void)
     return _ReadStatusReg(ARM64_CNTVCT);
 #else
     unsigned long long cval;
-    asm volatile("mrs %0, cntvct_el0"
-                 : "=r"(cval));
+    __asm__ __volatile__(
+        "mrs %0, cntvct_el0"
+        : "=r"(cval));
     return cval;
 #endif
 }

@@ -222,6 +222,8 @@ static int compare_u64(const void *pa, const void *pb)
  * between consecutive changes in the clock's value. 'reads' and 'ticks' are
  * the total number of clock reads and observed changes used to collect them.
  * Sorts 'deltas' in place. Returns 0 if the period cannot be determined.
+ * Sets '*irregular' if the clock has no consistent tick period, in which case
+ * the return value is the median delta.
  *
  * If the clock is read at least twice per tick on average, nearly every delta
  * is exactly one tick. The remainder are outliers in both directions: long
@@ -239,6 +241,13 @@ static int compare_u64(const void *pa, const void *pb)
  * nanoseconds, and narrow enough to exclude missed ticks (2x and up) and
  * short outliers.
  *
+ * Some clocks have no regular tick at all: their value is updated on
+ * irregular events (e.g. kernel entry or context switches) and the deltas
+ * spread over several orders of magnitude. For a clock with a regular tick,
+ * nearly all deltas fall within the window above. If fewer than three
+ * quarters do, the clock is treated as irregular and the median is returned
+ * as its typical update interval.
+ *
  * If the clock is read less than twice per tick, the reader cannot see every
  * change, so the deltas are a mix of one, two or more ticks and the median
  * overstates the period. The smallest delta is then the best estimate. If
@@ -246,10 +255,13 @@ static int compare_u64(const void *pa, const void *pb)
  * once per read, and its period cannot be determined at all.
  */
 static double estimate_tick_period(uint64_t *deltas, uint32_t count,
-                                   uint32_t reads, uint32_t ticks)
+                                   uint32_t reads, uint32_t ticks,
+                                   int *irregular)
 {
     uint32_t i, n;
     double median, sum;
+
+    *irregular = 0;
 
     if (count == 0 || reads <= ticks)
         return 0.0;
@@ -269,6 +281,11 @@ static double estimate_tick_period(uint64_t *deltas, uint32_t count,
             continue;
         sum += d;
         n++;
+    }
+
+    if (n < count - count / 4) {
+        *irregular = 1;
+        return median;
     }
 
     return sum / (double)n;
@@ -306,6 +323,7 @@ static void clock_compare(const struct clockspec self, const struct clockspec ot
     static uint64_t deltas[4096];
     uint32_t ndeltas;
     double observed_period;
+    int irregular;
 
     double *cost_self, *cost_other;
     double cost_self_mean, cost_self_error, cost_other_mean, cost_other_error;
@@ -389,7 +407,8 @@ baseline:
 
     delta /= ticks;
 
-    observed_period = estimate_tick_period(deltas, ndeltas, reads, ticks);
+    observed_period = estimate_tick_period(deltas, ndeltas, reads, ticks,
+                                           &irregular);
 
     /*
      * Clamp to either 30 or 200.
@@ -490,8 +509,10 @@ baseline:
     cost_self_mean -= overhead;
     cost_other_mean -= overhead;
 
-    if (observed_period > 0.0)
-        pretty_print(strbuf[0], sizeof(strbuf[0]), 1e9 / observed_period, rate_suffixes, 10);
+    if (observed_period > 0.0) {
+        pretty_print(strbuf[1], sizeof(strbuf[1]), 1e9 / observed_period, rate_suffixes, 10);
+        snprintf(strbuf[0], sizeof(strbuf[0]), "%s%s", irregular ? "~" : "", strbuf[1]);
+    }
     else
         strcpy(strbuf[0], "----");
 

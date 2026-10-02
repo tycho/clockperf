@@ -205,6 +205,75 @@ static int range_intersects(double m1, double e1, double m2, double e2)
     return !(m1 + e1 < m2 - e2 || m2 + e2 < m1 - e1);
 }
 
+static int compare_u64(const void *pa, const void *pb)
+{
+    uint64_t a = *(uint64_t *)pa,
+             b = *(uint64_t *)pb;
+
+    if (a < b)
+        return -1;
+    if (a > b)
+        return 1;
+    return 0;
+}
+
+/*
+ * Estimates a clock's tick period, in nanoseconds, from the deltas observed
+ * between consecutive changes in the clock's value. 'reads' and 'ticks' are
+ * the total number of clock reads and observed changes used to collect them.
+ * Sorts 'deltas' in place. Returns 0 if the period cannot be determined.
+ *
+ * If the clock is read at least twice per tick on average, nearly every delta
+ * is exactly one tick. The remainder are outliers in both directions: long
+ * deltas where the reader was preempted or missed a tick, and short deltas
+ * where the hardware emitted an irregular step (e.g. ARM generic timers
+ * reporting in 1GHz units, which step by a fraction of their nominal period
+ * now and then). The minimum delta is skewed by even one short outlier,
+ * whereas the median tolerates outliers making up to half the samples.
+ *
+ * The median alone is quantized to whole nanoseconds, though: a 24MHz clock
+ * (41.67ns) produces a mix of 41ns and 42ns deltas, and the median lands on
+ * one or the other. Averaging the deltas within [median/2, median*3/2]
+ * recovers the fractional period. That window is wide enough to keep both
+ * integers adjacent to the true period, even for periods of a few
+ * nanoseconds, and narrow enough to exclude missed ticks (2x and up) and
+ * short outliers.
+ *
+ * If the clock is read less than twice per tick, the reader cannot see every
+ * change, so the deltas are a mix of one, two or more ticks and the median
+ * overstates the period. The smallest delta is then the best estimate. If
+ * every read returned a distinct value, the clock may be advancing more than
+ * once per read, and its period cannot be determined at all.
+ */
+static double estimate_tick_period(uint64_t *deltas, uint32_t count,
+                                   uint32_t reads, uint32_t ticks)
+{
+    uint32_t i, n;
+    double median, sum;
+
+    if (count == 0 || reads <= ticks)
+        return 0.0;
+
+    qsort(deltas, count, sizeof(uint64_t), compare_u64);
+
+    if (reads < ticks * 2)
+        return (double)deltas[0];
+
+    median = (double)deltas[count / 2];
+
+    sum = 0.0;
+    n = 0;
+    for (i = 0; i < count; i++) {
+        double d = (double)deltas[i];
+        if (d < median * 0.5 || d > median * 1.5)
+            continue;
+        sum += d;
+        n++;
+    }
+
+    return sum / (double)n;
+}
+
 const char *rate_suffixes[] = { "Hz", "KHz", "MHz", "GHz", NULL };
 
 static const char *pretty_print(char *buffer, size_t bufsz, double v,
@@ -234,7 +303,9 @@ static void clock_compare(const struct clockspec self, const struct clockspec ot
     uint64_t s[2], o[2], t[2];
     char strbuf[2][16];
     long long delta;
-    uint64_t observed_res = (uint64_t)-1;
+    static uint64_t deltas[4096];
+    uint32_t ndeltas;
+    double observed_period;
 
     double *cost_self, *cost_other;
     double cost_self_mean, cost_self_error, cost_other_mean, cost_other_error;
@@ -273,6 +344,7 @@ baseline:
      * Measure time between ticks.
      */
     reads = 0;
+    ndeltas = 0;
     ticks = samples * 2;
     clock_read(other, &o[0]);
     clock_read(self, &t[1]);
@@ -292,8 +364,8 @@ baseline:
          * resolution.
          */
         delta = t[1] - t[0];
-        if (delta > 0 && (uint64_t)delta < observed_res)
-            observed_res = delta;
+        if (delta > 0 && ndeltas < sizeof(deltas) / sizeof(deltas[0]))
+            deltas[ndeltas++] = (uint64_t)delta;
 
         /*
          * If the clock is taking too long per tick, we don't want to sit here
@@ -317,10 +389,12 @@ baseline:
 
     delta /= ticks;
 
+    observed_period = estimate_tick_period(deltas, ndeltas, reads, ticks);
+
     /*
      * Clamp to either 30 or 200.
      */
-    samples = (uint32_t)fmax(30.0, 1e6 / observed_res);
+    samples = (uint32_t)fmax(30.0, observed_period > 0.0 ? 1e6 / observed_period : 200.0);
     if (samples > 200)
         samples = 200;
     else if (samples > 30)
@@ -328,14 +402,6 @@ baseline:
 
     cost_self = malloc(sizeof(double) * samples);
     cost_other = malloc(sizeof(double) * samples);
-
-    if (reads == ticks) {
-        /*
-         * We got a distinct value on every read, so we cannot meaningfully
-         * measure the resolution of this clock.
-         */
-        observed_res = 0;
-    }
 
     ticks = 0;
     reads = 0;
@@ -424,8 +490,8 @@ baseline:
     cost_self_mean -= overhead;
     cost_other_mean -= overhead;
 
-    if (observed_res > 0)
-        pretty_print(strbuf[0], sizeof(strbuf[0]), 1e9 / observed_res, rate_suffixes, 10);
+    if (observed_period > 0.0)
+        pretty_print(strbuf[0], sizeof(strbuf[0]), 1e9 / observed_period, rate_suffixes, 10);
     else
         strcpy(strbuf[0], "----");
 
